@@ -1,0 +1,21 @@
+{
+  "name": "HoloStem",
+  "short_name": "HoloStem",
+  "id": "/",
+  "scope": "/",
+  "lang": "en",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef2f7",
+  "theme_color": "#0077ff",
+  "description": "HoloStem: watch, listen, play, and connect in one app.",
+  "categories": ["entertainment", "social", "music"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
+}
