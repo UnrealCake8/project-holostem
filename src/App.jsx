@@ -4,6 +4,7 @@ import './App.css'
 import { appConfig } from './config/appConfig'
 import { useAuth } from './features/auth/AuthContext'
 import { apiRequest } from './lib/apiClient'
+import { uploadImageFile, uploadVideoFile } from './lib/cloudinaryUpload'
 
 function AuthPanel() {
   const { signIn, signUp, user, signOut } = useAuth()
@@ -241,18 +242,21 @@ function UploadPanel() {
   async function handleSubmit(event) {
     event.preventDefault()
     if (!token || !file) return
-    const formData = new FormData()
-    formData.append('caption', caption)
-    formData.append('video', file)
-    formData.append('visibility', 'public')
 
     try {
-      setStatus('Uploading...')
+      setStatus('Uploading video to cloud...')
+      const cloudUpload = await uploadVideoFile(file)
+
+      setStatus('Saving post...')
       await apiRequest('/videos/upload', {
         method: 'POST',
         token,
-        body: formData,
-        isFormData: true,
+        body: {
+          caption,
+          visibility: 'public',
+          videoUrl: cloudUpload.videoUrl,
+          thumbnail: cloudUpload.thumbnailUrl,
+        },
       })
       setStatus('Uploaded')
       setCaption('')
@@ -296,6 +300,7 @@ function UploadPanel() {
 
 function ProfilePanel() {
   const { user, token, updateProfile } = useAuth()
+  const [avatarFile, setAvatarFile] = useState(null)
   const [profile, setProfile] = useState({
     fullName: user?.fullName || '',
     bio: user?.bio || '',
@@ -331,8 +336,16 @@ function ProfilePanel() {
     event.preventDefault()
     if (!token) return
     try {
-      await updateProfile(profile)
+      let avatarUrl = profile.avatarUrl
+      if (avatarFile) {
+        setStatus('Uploading avatar to cloud...')
+        avatarUrl = await uploadImageFile(avatarFile)
+      }
+
+      await updateProfile({ ...profile, avatarUrl })
+      setProfile((prev) => ({ ...prev, avatarUrl }))
       setStatus('Profile saved')
+      setAvatarFile(null)
     } catch (err) {
       setStatus(err.message)
     }
@@ -362,6 +375,14 @@ function ProfilePanel() {
           <input
             value={profile.avatarUrl}
             onChange={(event) => setProfile((prev) => ({ ...prev, avatarUrl: event.target.value }))}
+          />
+        </label>
+        <label>
+          Or upload avatar image
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => setAvatarFile(event.target.files?.[0] || null)}
           />
         </label>
         <label>
