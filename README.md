@@ -1,50 +1,40 @@
-# HoloStem PWA
+# HoloStem Full-Stack Scaffold
 
-HoloStem is a React + Vite progressive web app scaffold with:
+HoloStem now includes a real backend API + database schema foundation:
 
-- Authentication flow UI (signup/login)
-- Protected app routes
-- Dashboard and content modules (Watch, Listen, Play, Social, Profile, Settings)
-- Local persistence for session/profile state
-- PWA support via `manifest.webmanifest` and service worker
-- Vercel SPA rewrite configuration
+- JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
+- User profile API (`/api/users/:username`, `/api/users/me/profile`)
+- Video feed and uploads (`/api/videos/feed`, `/api/videos/upload`)
+- Like and comment APIs (`/api/videos/:videoId/like`, comments endpoints)
+- Public watch feed (no account required), authenticated uploads/profile editing
 
-## Local Development
+## Run Locally
+
+1. Install dependencies
+2. Copy env file
+3. Push Prisma schema
+4. Start API and frontend together
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env
+npx prisma db push
+npm run dev:full
 ```
 
-Open the URL printed in terminal (usually `http://localhost:5173`).
+Frontend: `http://localhost:5173`  
+API: `http://localhost:4000`
 
-## Production Build
+## Required Environment Variables
 
-```bash
-npm run build
-npm run preview
-```
+- `DATABASE_URL` (example: `file:./dev.db`)
+- `JWT_SECRET`
+- `CORS_ORIGIN` (example: `http://localhost:5173`)
+- `PORT` (default `4000`)
+- `VITE_API_BASE_URL` (default `http://localhost:4000/api`)
 
-## Deploy to Vercel
+## Vercel Note
 
-This repository is ready for Vercel deployment.
-
-### Vercel Project Settings
-
-- Framework Preset: `Vite`
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Install Command: `npm install`
-
-### SPA Routing Support
-
-`vercel.json` includes a rewrite rule so routes like `/app/watch` or `/app/profile`
-work on refresh instead of returning 404.
-
-## Environment Variables
-
-Optional:
-
-- `VITE_API_BASE_URL` - API base URL for backend integrations
-
-If not set, the app falls back to `https://api.example.com`.
+Vercel hosts the React frontend. The API needs a backend host
+(e.g. Render, Railway, Fly.io, or Supabase edge/functions).
+Keep `vercel.json` rewrite for SPA routing.

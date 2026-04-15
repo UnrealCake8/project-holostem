@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  username     String    @unique
+  fullName     String
+  bio          String?
+  avatarUrl    String?
+  passwordHash String
+  privacy      String    @default("public")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  videos       Video[]
+  likes        VideoLike[]
+  comments     Comment[]
+}
+
+model Video {
+  id          String      @id @default(cuid())
+  userId      String
+  caption     String
+  videoUrl    String
+  thumbnail   String?
+  visibility  String      @default("public")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  author      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes       VideoLike[]
+  comments    Comment[]
+}
+
+model VideoLike {
+  id        String   @id @default(cuid())
+  videoId   String
+  userId    String
+  createdAt DateTime @default(now())
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  videoId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

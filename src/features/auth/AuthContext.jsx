@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   getCurrentSession,
+  refreshMe,
   signIn,
   signOut,
   signUp,
@@ -10,33 +11,58 @@ import {
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getCurrentSession())
+  const [session, setSession] = useState(() => getCurrentSession())
+  const [authLoading, setAuthLoading] = useState(true)
+
+  useEffect(() => {
+    async function bootstrap() {
+      if (!session?.token) {
+        setAuthLoading(false)
+        return
+      }
+
+      try {
+        const next = await refreshMe(session.token)
+        setSession(next)
+      } catch {
+        signOut()
+        setSession(null)
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    bootstrap()
+  }, [])
 
   const value = useMemo(
     () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      signIn: (payload) => {
-        const result = signIn(payload)
-        if (result.ok) setUser(result.user)
-        return result
+      user: session?.user || null,
+      token: session?.token || null,
+      isAuthenticated: Boolean(session?.token),
+      authLoading,
+      signIn: async (payload) => {
+        const next = await signIn(payload)
+        setSession(next)
+        return next
       },
-      signUp: (payload) => {
-        const result = signUp(payload)
-        if (result.ok) setUser(result.user)
-        return result
+      signUp: async (payload) => {
+        const next = await signUp(payload)
+        setSession(next)
+        return next
       },
       signOut: () => {
         signOut()
-        setUser(null)
+        setSession(null)
       },
-      updateProfile: (payload) => {
-        const nextUser = updateCurrentUserProfile(payload)
-        if (nextUser) setUser(nextUser)
-        return nextUser
+      updateProfile: async (payload) => {
+        if (!session?.token) throw new Error('Authentication required')
+        const next = await updateCurrentUserProfile(session.token, payload)
+        setSession(next)
+        return next
       },
     }),
-    [user],
+    [session, authLoading],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
