@@ -1,16 +1,15 @@
 import { Router } from 'express'
-import multer from 'multer'
+import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth } from '../middleware/auth.js'
-import { uploadMediaToCloudinary } from '../lib/cloudinary.js'
 
 const router = Router()
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: Number(process.env.MAX_VIDEO_UPLOAD_BYTES || 104857600),
-  },
+const uploadPayloadSchema = z.object({
+  caption: z.string().trim().min(1, 'Caption is required').max(280),
+  visibility: z.enum(['public', 'friends', 'private']).default('public'),
+  videoUrl: z.url('A valid cloud video URL is required'),
+  thumbnail: z.url('A valid cloud thumbnail URL is required').optional(),
 })
 
 router.get('/feed', async (_req, res) => {
@@ -33,26 +32,24 @@ router.get('/feed', async (_req, res) => {
   return res.json({ videos })
 })
 
-router.post('/upload', requireAuth, upload.single('video'), async (req, res) => {
-  const file = req.file
-  const { caption, visibility } = req.body
+router.post('/upload', requireAuth, async (req, res) => {
+  const parsed = uploadPayloadSchema.safeParse(req.body)
 
-  if (!file || !caption) {
-    return res.status(400).json({ message: 'Caption and video file are required' })
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: parsed.error.issues[0]?.message || 'Invalid upload payload',
+    })
   }
 
-  const media = await uploadMediaToCloudinary({
-    file,
-    resourceType: 'video',
-  })
+  const { caption, visibility, videoUrl, thumbnail } = parsed.data
 
   const video = await prisma.video.create({
     data: {
       userId: req.user.id,
       caption,
-      visibility: visibility || 'public',
-      videoUrl: media.secureUrl,
-      thumbnail: media.thumbnailUrl,
+      visibility,
+      videoUrl,
+      thumbnail,
     },
     include: {
       author: {
