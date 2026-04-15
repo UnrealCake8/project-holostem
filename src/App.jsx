@@ -1,87 +1,29 @@
-import { useMemo, useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useMemo } from 'react'
+import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import './App.css'
-import { AppLayout } from './components/AppLayout'
-import { appConfig } from './config/appConfig'
-import { useAuth } from './features/auth/AuthContext'
 import {
   listenCatalog,
   playCatalog,
   socialFeatures,
   watchCatalog,
 } from './features/content/mockCatalog'
+import { appConfig } from './config/appConfig'
 
-function AuthGate({ children }) {
-  const { isAuthenticated } = useAuth()
-  return isAuthenticated ? children : <Navigate to="/login" replace />
-}
-
-function GuestGate({ children }) {
-  const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Navigate to="/app" replace /> : children
-}
-
-function AuthForm({ mode }) {
-  const isSignup = mode === 'signup'
-  const { signIn, signUp } = useAuth()
-  const [error, setError] = useState('')
-
-  function handleSubmit(event) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const payload = Object.fromEntries(formData.entries())
-    const result = isSignup ? signUp(payload) : signIn(payload)
-
-    if (!result.ok) {
-      const entries = Object.values(result.errors || {})
-      setError(entries.flat().join('. '))
-      return
-    }
-
-    window.location.assign('/app')
-  }
-
-  return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>{isSignup ? 'Create account' : 'Welcome back'}</h1>
-        <p className="muted">HoloStem MVP with production-style architecture</p>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {isSignup && <input name="fullName" placeholder="Full name" required />}
-          <input name="email" type="email" placeholder="Email" required />
-          <input name="password" type="password" placeholder="Password" required />
-          {error && <p className="error-text">{error}</p>}
-          <button type="submit" className="btn primary">
-            {isSignup ? 'Create account' : 'Sign in'}
-          </button>
-        </form>
-        <p className="muted">
-          {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <a href={isSignup ? '/login' : '/signup'}>
-            {isSignup ? 'Sign in' : 'Create one'}
-          </a>
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function DashboardPage() {
-  const { user } = useAuth()
+function DashboardPanel() {
   const stats = useMemo(
     () => [
       { label: 'Watch items', value: watchCatalog.length },
       { label: 'Listen items', value: listenCatalog.length },
       { label: 'Games', value: playCatalog.length },
-      { label: 'Plan', value: user?.plan === 'premium' ? 'Premium' : 'Free' },
+      { label: 'View mode', value: 'Guest enabled' },
     ],
-    [user?.plan],
+    [],
   )
 
   return (
     <section>
-      <h2>Dashboard</h2>
-      <p className="muted">All-in-one media, social, and entertainment platform.</p>
+      <h2>Activity Dashboard</h2>
+      <p className="muted">Quick overview of your HoloStem activity area.</p>
       <div className="grid cards">
         {stats.map((item) => (
           <article key={item.label} className="card">
@@ -94,23 +36,12 @@ function DashboardPage() {
   )
 }
 
-function CatalogPage({ title, items, metaKey }) {
-  const [query, setQuery] = useState('')
-  const filtered = items.filter((item) =>
-    item.title.toLowerCase().includes(query.toLowerCase().trim()),
-  )
-
+function ListPanel({ title, items, metaKey }) {
   return (
     <section>
       <h2>{title}</h2>
-      <input
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={`Search ${title.toLowerCase()}`}
-        className="search"
-      />
       <div className="grid cards">
-        {filtered.map((item) => (
+        {items.map((item) => (
           <article key={item.id} className="card">
             <h3>{item.title}</h3>
             <p>{item.type}</p>
@@ -122,11 +53,11 @@ function CatalogPage({ title, items, metaKey }) {
   )
 }
 
-function SocialPage() {
+function SocialPanel() {
   return (
     <section>
-      <h2>Social Hub</h2>
-      <p className="muted">Core capabilities scoped for future backend integration.</p>
+      <h2>Social</h2>
+      <p className="muted">Core capabilities for chat, sharing, and community.</p>
       <div className="list">
         {socialFeatures.map((item) => (
           <div key={item} className="list-item">
@@ -139,67 +70,163 @@ function SocialPage() {
   )
 }
 
-function ProfilePage() {
-  const { user } = useAuth()
+function ProfilePanel() {
   return (
     <section>
       <h2>Profile</h2>
       <div className="card">
         <p>
-          <strong>Name:</strong> {user?.fullName}
+          <strong>Name:</strong> Guest User
         </p>
         <p>
-          <strong>Email:</strong> {user?.email}
+          <strong>Email:</strong> guest@holostem.app
         </p>
         <p>
-          <strong>Plan:</strong> {user?.plan}
+          <strong>Plan:</strong> Free
         </p>
         <p>
-          <strong>Privacy:</strong> {user?.privacy}
+          <strong>Privacy:</strong> Friends only
         </p>
       </div>
     </section>
   )
 }
 
-function SettingsPage() {
-  const { user, updateProfile } = useAuth()
-  const [message, setMessage] = useState('')
-
-  function handleSubmit(event) {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const plan = form.get('plan')
-    const privacy = form.get('privacy')
-    updateProfile({ plan, privacy })
-    setMessage('Settings saved')
-  }
-
+function SettingsPanel() {
   return (
     <section>
       <h2>Settings</h2>
-      <form className="card settings-form" onSubmit={handleSubmit}>
+      <form className="card settings-form">
         <label>
           Plan
-          <select name="plan" defaultValue={user?.plan}>
+          <select name="plan" defaultValue="free">
             <option value="free">Free</option>
             <option value="premium">Premium</option>
           </select>
         </label>
         <label>
           Privacy
-          <select name="privacy" defaultValue={user?.privacy}>
+          <select name="privacy" defaultValue="friends">
             <option value="public">Public</option>
             <option value="friends">Friends only</option>
             <option value="private">Private</option>
           </select>
         </label>
-        <button className="btn primary" type="submit">
-          Save settings
-        </button>
-        {message && <p className="muted">{message}</p>}
+        <button className="btn primary" type="button">Save settings</button>
+        <p className="muted">Your real backend settings can be connected later.</p>
       </form>
     </section>
+  )
+}
+
+const activityTabs = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'social', label: 'Social' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'play', label: 'Play' },
+  { id: 'listen', label: 'Listen' },
+  { id: 'settings', label: 'Settings' },
+]
+
+function ActivityPage() {
+  const { section = 'dashboard' } = useParams()
+
+  const panelMap = {
+    dashboard: <DashboardPanel />,
+    social: <SocialPanel />,
+    profile: <ProfilePanel />,
+    play: <ListPanel title="Play" items={playCatalog} metaKey="difficulty" />,
+    listen: <ListPanel title="Listen" items={listenCatalog} metaKey="mood" />,
+    settings: <SettingsPanel />,
+  }
+
+  const panel = panelMap[section] || <DashboardPanel />
+
+  return (
+    <div className="activity-wrap">
+      <div className="activity-tabs">
+        {activityTabs.map((tab) => (
+          <NavLink
+            key={tab.id}
+            to={`/activity/${tab.id}`}
+            className={({ isActive }) => `activity-tab ${isActive ? 'active' : ''}`}
+          >
+            {tab.label}
+          </NavLink>
+        ))}
+      </div>
+      {panel}
+    </div>
+  )
+}
+
+function WatchPage() {
+  return (
+    <section className="watch-layout">
+      <div className="phone-frame">
+        <div className="feed-video">
+          <div className="feed-top-bar" />
+          <img
+            src="/favicon.svg"
+            alt="Video cover"
+            className="feed-preview"
+          />
+          <div className="feed-overlay">
+            <p className="feed-handle">@holostem</p>
+            <p>No account required - scroll style feed is public.</p>
+          </div>
+        </div>
+      </div>
+      <div className="feed-actions">
+        <button type="button" className="bubble">Like</button>
+        <button type="button" className="bubble">Comment</button>
+        <button type="button" className="bubble">Share</button>
+      </div>
+    </section>
+  )
+}
+
+function AppShell() {
+  const navItems = [
+    { to: '/watch', label: 'For You' },
+    { to: '/activity/dashboard', label: 'Activity' },
+  ]
+
+  return (
+    <div className="tt-shell">
+      <aside className="tt-sidebar">
+        <h1>{appConfig.appName}</h1>
+        <input className="search" placeholder="Search" />
+        <nav className="tt-nav">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => `tt-link ${isActive ? 'active' : ''}`}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+
+      <main className="tt-main">
+        <Routes>
+          <Route path="/watch" element={<WatchPage />} />
+          <Route path="/activity/:section" element={<ActivityPage />} />
+          <Route path="/activity" element={<Navigate to="/activity/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/watch" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
+      <aside className="tt-right">
+        <div className="ghost-circle" />
+        <div className="ghost-circle" />
+        <div className="ghost-circle" />
+        <div className="ghost-circle" />
+      </aside>
+    </div>
   )
 }
 
@@ -207,48 +234,11 @@ function NotFound() {
   return (
     <section>
       <h2>Page not found</h2>
-      <a href="/app">Back to app</a>
+      <a href="/watch">Back to feed</a>
     </section>
   )
 }
 
 export default function App() {
-  return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          <GuestGate>
-            <AuthForm mode="login" />
-          </GuestGate>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <GuestGate>
-            <AuthForm mode="signup" />
-          </GuestGate>
-        }
-      />
-      <Route
-        path="/app"
-        element={
-          <AuthGate>
-            <AppLayout />
-          </AuthGate>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="watch" element={<CatalogPage title="Watch" items={watchCatalog} metaKey="audience" />} />
-        <Route path="listen" element={<CatalogPage title="Listen" items={listenCatalog} metaKey="mood" />} />
-        <Route path="play" element={<CatalogPage title="Play" items={playCatalog} metaKey="difficulty" />} />
-        <Route path="social" element={<SocialPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
-      <Route path="/" element={<Navigate to="/app" replace />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  )
+  return <AppShell />
 }
