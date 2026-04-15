@@ -1,40 +1,62 @@
-# HoloStem Full-Stack Scaffold
+# HoloStem Full-Stack Scaffold (Vercel + Cloud)
 
-HoloStem now includes a real backend API + database schema foundation:
+HoloStem now runs as a single Vercel project with:
 
-- JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
-- User profile API (`/api/users/:username`, `/api/users/me/profile`)
-- Video feed and uploads (`/api/videos/feed`, `/api/videos/upload`)
-- Like and comment APIs (`/api/videos/:videoId/like`, comments endpoints)
-- Public watch feed (no account required), authenticated uploads/profile editing
+- React frontend (Vite build output)
+- Serverless API at `/api/*` (Express wrapped for Vercel Functions)
+- Cloud database via Prisma + PostgreSQL
+- Cloud-hosted media uploads via Cloudinary (video URLs + thumbnails saved in DB)
+
+## API Endpoints
+
+- Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
+- User profile: `/api/users/:username`, `/api/users/me/profile`
+- Videos: `/api/videos/feed`, `/api/videos/upload`
+- Engagement: `/api/videos/:videoId/like`, `/api/videos/:videoId/comments`
 
 ## Run Locally
 
-1. Install dependencies
-2. Copy env file
-3. Push Prisma schema
-4. Start API and frontend together
+1. Install dependencies.
+2. Copy env file and fill your Postgres + Cloudinary values.
+3. Generate Prisma client and push schema.
+4. Start backend + frontend.
 
 ```bash
 npm install
 cp .env.example .env
-npx prisma db push
+npm run db:generate
+npm run db:push
 npm run dev:full
 ```
 
 Frontend: `http://localhost:5173`  
-API: `http://localhost:4000`
+API: `http://localhost:4000/api`
 
-## Required Environment Variables
+## Deploy to Vercel (with cloud DB + cloud media)
 
-- `DATABASE_URL` (example: `file:./dev.db`)
-- `JWT_SECRET`
-- `CORS_ORIGIN` (example: `http://localhost:5173`)
-- `PORT` (default `4000`)
-- `VITE_API_BASE_URL` (default `http://localhost:4000/api`)
+1. Create a managed PostgreSQL database (Neon, Supabase, RDS, Railway, etc.).
+2. In Vercel project settings, add environment variables from `.env.example`.
+3. Connect a Cloudinary account and create an **unsigned upload preset** for videos.
+4. Set your Vercel build command to `npm run build` (default for Vite).
+5. Redeploy.
+6. Run Prisma schema push against production DB once:
 
-## Vercel Note
+```bash
+DATABASE_URL="your-production-postgres-url" npx prisma db push
+```
 
-Vercel hosts the React frontend. The API needs a backend host
-(e.g. Render, Railway, Fly.io, or Supabase edge/functions).
-Keep `vercel.json` rewrite for SPA routing.
+### Required Environment Variables
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - long random secret
+- `CORS_ORIGIN` - your Vercel app URL
+- `VITE_API_BASE_URL` - `/api` on Vercel
+- `CLOUDINARY_CLOUD_NAME` - your Cloudinary cloud name
+- `CLOUDINARY_UPLOAD_PRESET` - unsigned preset used by backend upload route
+- `MAX_VIDEO_UPLOAD_BYTES` - optional upload size cap
+
+## Notes
+
+- `vercel.json` rewrites `/api/*` to serverless API handler and all other routes to SPA entry.
+- Local file uploads are removed; videos now stream from Cloudinary URLs.
+- Prisma datasource is PostgreSQL for cloud deployment compatibility.

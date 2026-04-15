@@ -1,21 +1,17 @@
 import { Router } from 'express'
 import multer from 'multer'
-import path from 'path'
 import { prisma } from '../lib/prisma.js'
 import { requireAuth } from '../middleware/auth.js'
+import { uploadMediaToCloudinary } from '../lib/cloudinary.js'
 
 const router = Router()
 
-const storage = multer.diskStorage({
-  destination: path.join(process.cwd(), 'public/uploads'),
-  filename: (_, file, cb) => {
-    const timestamp = Date.now()
-    const sanitized = file.originalname.replace(/\s+/g, '-').toLowerCase()
-    cb(null, `${timestamp}-${sanitized}`)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: Number(process.env.MAX_VIDEO_UPLOAD_BYTES || 104857600),
   },
 })
-
-const upload = multer({ storage })
 
 router.get('/feed', async (_req, res) => {
   const videos = await prisma.video.findMany({
@@ -45,12 +41,18 @@ router.post('/upload', requireAuth, upload.single('video'), async (req, res) => 
     return res.status(400).json({ message: 'Caption and video file are required' })
   }
 
+  const media = await uploadMediaToCloudinary({
+    file,
+    resourceType: 'video',
+  })
+
   const video = await prisma.video.create({
     data: {
       userId: req.user.id,
       caption,
       visibility: visibility || 'public',
-      videoUrl: `/uploads/${file.filename}`,
+      videoUrl: media.secureUrl,
+      thumbnail: media.thumbnailUrl,
     },
     include: {
       author: {
