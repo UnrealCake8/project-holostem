@@ -8,7 +8,6 @@ import videosRoutes from './routes/videos.routes.js'
 
 export const app = express()
 const origin = process.env.CORS_ORIGIN || 'http://localhost:5173'
-const isProduction = process.env.NODE_ENV === 'production'
 
 app.use(helmet())
 app.use(cors({ origin }))
@@ -22,6 +21,7 @@ app.get('/api/health', (_req, res) => {
     hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
     hasJwtSecret: Boolean(process.env.JWT_SECRET),
   })
+  res.json({ status: 'ok', service: 'holostem-api' })
 })
 
 app.use('/api/auth', authRoutes)
@@ -41,4 +41,5 @@ app.use((error, _req, res, _next) => {
     message,
     code: error?.code || undefined,
   })
+  res.status(500).json({ message: 'Internal server error' })
 })
