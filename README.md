@@ -53,6 +53,17 @@ DATABASE_URL="your-production-postgres-url" npx prisma db push
 - `VITE_CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
 - `VITE_CLOUDINARY_UPLOAD_PRESET` - unsigned preset for direct browser uploads
 
+
+## If you see "Internal server error"
+
+Check these first:
+
+1. `DATABASE_URL` is set in Vercel and points to a reachable Postgres instance.
+2. `JWT_SECRET` is set in Vercel.
+3. `CORS_ORIGIN` exactly matches your deployed frontend URL.
+4. Run schema push for production once: `DATABASE_URL="..." npx prisma db push`.
+5. Open `/api/health` and confirm `hasDatabaseUrl` and `hasJwtSecret` are both `true`.
+
 ## Architecture Notes
 
 - `/api/*` is routed to `api/index.js` (Vercel function), while all non-API routes rewrite to SPA entry.

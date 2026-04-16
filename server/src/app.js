@@ -15,6 +15,12 @@ app.use(morgan('dev'))
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'holostem-api',
+    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    hasJwtSecret: Boolean(process.env.JWT_SECRET),
+  })
   res.json({ status: 'ok', service: 'holostem-api' })
 })
 
@@ -24,5 +30,16 @@ app.use('/api/videos', videosRoutes)
 
 app.use((error, _req, res, _next) => {
   console.error(error)
+
+  const status = Number(error?.status || error?.statusCode || 500)
+  const message =
+    status >= 500 && isProduction
+      ? 'Internal server error'
+      : error?.message || 'Internal server error'
+
+  res.status(status).json({
+    message,
+    code: error?.code || undefined,
+  })
   res.status(500).json({ message: 'Internal server error' })
 })
