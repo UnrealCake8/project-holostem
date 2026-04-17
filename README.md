@@ -1,71 +1,110 @@
-# HoloStem Full-Stack Scaffold (Vercel + Cloud)
+# HoloStem (React + Vite + Supabase + Tailwind)
 
-HoloStem is configured to run as a single Vercel project with:
+HoloStem is a **working interactive media + learning platform** with:
 
-- Vite/React frontend
-- Express API served from Vercel Functions (`/api/*`)
-- Prisma + PostgreSQL for cloud database
-- Cloudinary for cloud-hosted video and image files
+- ✅ Auth (signup/login)
+- ✅ Real user dashboard and profile
+- ✅ Supabase-backed persistence (content, views, progress, profile)
+- ✅ Interactive content system (videos, lessons, mini experiences)
+- ✅ Personalized feed blocks (recommended, recently viewed, trending)
+- ✅ Engagement points/progress system
+- ✅ Accessibility settings (large text, simple mode)
+- ✅ Mobile-first responsive UI
+- ✅ Deploy-ready for Vercel
 
-## Why direct-to-cloud uploads
+---
 
-Vercel serverless functions have request body limits, so uploading large videos through your API is fragile.
-This project uploads media **directly from the browser to Cloudinary**, then saves only the resulting URLs in your database.
+## Tech stack
 
-## API Endpoints
+- React + Vite
+- Tailwind CSS
+- Supabase (Auth + Postgres)
 
-- Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
-- User profile: `/api/users/:username`, `/api/users/me/profile`
-- Videos: `/api/videos/feed`, `/api/videos/upload` (metadata-only save)
-- Engagement: `/api/videos/:videoId/like`, `/api/videos/:videoId/comments`
+---
 
-## Local Development
+## Pages included
+
+- `/auth` — login/sign up
+- `/dashboard` — personalized feed + content browser/search/filter
+- `/content/:id` — content viewer page
+- `/profile` — user profile editor
+- `/settings` — accessibility + UI options
+- `/admin` — simple content uploader (optional extra)
+
+---
+
+## 1) Install and run
 
 ```bash
 npm install
 cp .env.example .env
-npm run db:generate
-npm run db:push
-npm run dev:full
+npm run dev
 ```
 
-Frontend: `http://localhost:5173`
-API: `http://localhost:4000/api`
+Open `http://localhost:5173`.
 
-## Deploy to Vercel
+---
 
-1. Create a managed PostgreSQL database (Neon/Supabase/Railway/etc.).
-2. Create a Cloudinary account and an unsigned upload preset.
-3. Add all variables from `.env.example` in Vercel project settings.
-4. Deploy the app.
-5. Push Prisma schema to production DB once:
+## 2) Supabase setup
 
-```bash
-DATABASE_URL="your-production-postgres-url" npx prisma db push
+1. Create a Supabase project.
+2. Copy your project URL + anon key into `.env`.
+3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
+4. In Supabase Auth settings, allow email/password login.
+
+### Required env vars
+
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
 ```
 
-## Required Environment Variables
+---
 
-- `DATABASE_URL` - PostgreSQL connection string
-- `JWT_SECRET` - JWT signing secret
-- `CORS_ORIGIN` - your deployed frontend origin
-- `VITE_API_BASE_URL` - use `/api` in Vercel
-- `VITE_CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
-- `VITE_CLOUDINARY_UPLOAD_PRESET` - unsigned preset for direct browser uploads
+## 3) Database schema
 
+`supabase/schema.sql` creates:
 
-## If you see "Internal server error"
+- `profiles`
+- `contents`
+- `user_progress`
+- `user_views`
 
-Check these first:
+And includes starter content rows for quick testing.
 
-1. `DATABASE_URL` is set in Vercel and points to a reachable Postgres instance.
-2. `JWT_SECRET` is set in Vercel.
-3. `CORS_ORIGIN` exactly matches your deployed frontend URL.
-4. Run schema push for production once: `DATABASE_URL="..." npx prisma db push`.
-5. Open `/api/health` and confirm `hasDatabaseUrl` and `hasJwtSecret` are both `true`.
+---
 
-## Architecture Notes
+## 4) Features implemented
 
-- `/api/*` is routed to `api/index.js` (Vercel function), while all non-API routes rewrite to SPA entry.
-- Video and avatar media are stored in Cloudinary; DB stores URLs only.
-- Prisma datasource uses PostgreSQL for cloud-native deployment.
+### Interactive Content System
+- Grid browsing UI with search and type filter.
+- Supported content types:
+  - `video`
+  - `lesson`
+  - `mini`
+- Clicking opens `/content/:id` viewer.
+
+### Personalized Feed
+- Recommended content
+- Recently viewed content
+- Trending content
+
+### Engagement / Progress
+- “Mark as complete” awards points.
+- Dashboard shows points, completed count, and level.
+
+### Accessibility + Inclusivity
+- Large text toggle
+- Simple mode toggle
+- Mobile/tablet first responsive layout
+
+---
+
+## 5) Deploy to Vercel
+
+1. Push repo to GitHub.
+2. Import into Vercel.
+3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel project environment variables.
+4. Deploy.
+
+No custom server is required for this frontend-Supabase architecture.

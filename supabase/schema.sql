@@ -1,0 +1,65 @@
+-- Run in Supabase SQL editor
+create extension if not exists "pgcrypto";
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  display_name text,
+  bio text,
+  age_group text default 'all',
+  created_at timestamptz default now()
+);
+
+create table if not exists public.contents (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null,
+  type text not null check (type in ('video', 'lesson', 'mini')),
+  category text,
+  media_url text,
+  difficulty text,
+  points int not null default 10,
+  recommended boolean default false,
+  is_trending boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.user_progress (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  points int not null default 0,
+  completed_count int not null default 0,
+  level int not null default 1,
+  updated_at timestamptz default now()
+);
+
+create table if not exists public.user_views (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content_id uuid not null references public.contents(id) on delete cascade,
+  viewed_at timestamptz default now(),
+  primary key (user_id, content_id)
+);
+
+alter table public.profiles enable row level security;
+alter table public.contents enable row level security;
+alter table public.user_progress enable row level security;
+alter table public.user_views enable row level security;
+
+-- basic policies
+create policy "read contents" on public.contents for select using (true);
+create policy "insert contents auth" on public.contents for insert to authenticated with check (true);
+
+create policy "user read own profile" on public.profiles for select to authenticated using (auth.uid() = id);
+create policy "user write own profile" on public.profiles for all to authenticated using (auth.uid() = id) with check (auth.uid() = id);
+
+create policy "user read own progress" on public.user_progress for select to authenticated using (auth.uid() = user_id);
+create policy "user write own progress" on public.user_progress for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "user read own views" on public.user_views for select to authenticated using (auth.uid() = user_id);
+create policy "user write own views" on public.user_views for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- starter content
+insert into public.contents (title, description, type, category, media_url, points, recommended, is_trending)
+values
+('Solar Systems in 60 Seconds', 'A fast visual introduction to planets and orbits.', 'video', 'Science', 'https://www.youtube.com/embed/libKVRa01L8', 20, true, true),
+('Build Better Study Habits', 'Interactive tips for daily progress and focus.', 'lesson', 'Learning', 'https://www.youtube.com/embed/IlU-zDU6aQ0', 15, true, false),
+('Reaction Mini Experience', 'Tap quickly to train your reaction timing.', 'mini', 'Experience', '', 30, false, true)
+on conflict do nothing;
