@@ -2,7 +2,6 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '../context/useAuth'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { readUiSettings } from '../lib/uiSettings'
 
 const menuItems = [
   { to: '/dashboard', label: 'For You', icon: '🏠' },
@@ -41,7 +40,7 @@ function SuggestedAccounts() {
   if (accounts.length === 0) return null
 
   return (
-    <div className="mt-6 border-t border-black/10 pt-4">
+    <div className="mt-6 border-t border-black/10 pt-4 simple-mode-hidden">
       <p className="mb-2 text-xl font-medium text-black/60">Suggested accounts</p>
       <ul className="space-y-3">
         {accounts.map((account) => (
@@ -132,7 +131,7 @@ export default function AppShell() {
             </NavLink>
           )}
 
-          {!readUiSettings().simpleMode && <SuggestedAccounts />}
+          <SuggestedAccounts />
         </aside>
 
         <main>
