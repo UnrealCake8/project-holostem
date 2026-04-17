@@ -33,10 +33,14 @@ export default function AuthProvider({ children }) {
 
   async function signUp({ email, password, fullName }) {
     if (!hasSupabaseConfig) throw new Error('Configure Supabase env vars to enable auth.')
+    const emailRedirectTo =
+      import.meta.env.VITE_AUTH_REDIRECT_URL ||
+      (typeof window !== 'undefined' ? `${window.location.origin}/auth` : undefined)
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: { data: { full_name: fullName }, emailRedirectTo },
     })
     if (error) throw error
   }

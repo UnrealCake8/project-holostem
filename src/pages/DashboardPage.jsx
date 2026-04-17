@@ -3,31 +3,26 @@ import { useEffect, useMemo, useState } from 'react'
 import { fetchContent, getDashboardData } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 
-function ContentCard({ item }) {
-  return (
-    <Link
-      to={`/content/${item.id}`}
-      className="rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/10"
-    >
-      <p className="mb-1 text-xs uppercase text-slate-400">{item.type}</p>
-      <h3 className="font-semibold">{item.title}</h3>
-      <p className="mt-1 text-sm text-slate-300 line-clamp-2">{item.description}</p>
-      <p className="mt-2 text-xs text-emerald-300">+{item.points ?? 10} points</p>
-    </Link>
-  )
-}
+function FeedPreview({ active }) {
+  if (!active) return <p className="p-4 text-white">No content yet.</p>
 
-function ContentRow({ title, items }) {
-  if (!items?.length) return null
-  return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold text-neon-cyan">{title}</h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <ContentCard key={item.id} item={item} />
-        ))}
+  if (active.type === 'mini') {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-black text-center text-white">
+        <p className="text-2xl font-semibold">Mini Experience</p>
+        <p className="mt-3 max-w-xs text-xl text-white/80">Open this card to play the interactive tap challenge and earn points.</p>
       </div>
-    </section>
+    )
+  }
+
+  return (
+    <iframe
+      title={active.title}
+      src={active.media_url}
+      className="h-full w-full"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+    />
   )
 }
 
@@ -38,6 +33,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('all')
+  const [activeId, setActiveId] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -46,60 +42,120 @@ export default function DashboardPage() {
         getDashboardData(user.id),
         fetchContent({ search, category }),
       ])
+
       setState(dashboardData)
       setBrowse(browseData)
+      setActiveId((prev) => prev || browseData[0]?.id || '')
       setLoading(false)
     }
     load()
   }, [user.id, search, category])
 
-  const progressPct = useMemo(() => {
-    const points = state.progress?.points ?? 0
-    return Math.min(100, points % 100)
-  }, [state.progress?.points])
+  const active = useMemo(() => browse.find((item) => item.id === activeId) || browse[0], [activeId, browse])
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-500/20 to-violet-500/20 p-4">
-        <p className="text-sm text-slate-300">Welcome back</p>
-        <h1 className="text-2xl font-bold">{user.user_metadata?.full_name || user.email}</h1>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-          <div className="rounded-lg bg-white/10 p-2">Points: {state.progress?.points ?? 0}</div>
-          <div className="rounded-lg bg-white/10 p-2">Completed: {state.progress?.completed_count ?? 0}</div>
-          <div className="rounded-lg bg-white/10 p-2">Level: {state.progress?.level ?? 1}</div>
-        </div>
-        <div className="mt-3 h-2 rounded-full bg-white/20">
-          <div className="h-2 rounded-full bg-neon-cyan" style={{ width: `${progressPct}%` }} />
-        </div>
+      <section className="grid gap-4 xl:grid-cols-[minmax(320px,480px)_minmax(320px,1fr)]">
+        <article className="rounded-2xl border border-black/10 bg-white p-4">
+          <h1 className="text-[2rem] font-bold text-pink-600">For You</h1>
+          <p className="text-xl text-black/55">Recommended, recent, and trending content for {user.user_metadata?.full_name || user.email}.</p>
+
+          <div className="mt-4 flex flex-col gap-2">
+            <input
+              className="rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-xl"
+              placeholder="Search videos, lessons, experiences"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-xl"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="all">All types</option>
+              <option value="video">Videos</option>
+              <option value="lesson">Interactive lessons</option>
+              <option value="mini">Mini experiences</option>
+            </select>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 text-lg">
+            <div className="rounded-lg bg-pink-50 p-2">Points: {state.progress?.points ?? 0}</div>
+            <div className="rounded-lg bg-pink-50 p-2">Completed: {state.progress?.completed_count ?? 0}</div>
+            <div className="rounded-lg bg-pink-50 p-2">Level: {state.progress?.level ?? 1}</div>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {browse.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveId(item.id)}
+                className={`w-full rounded-xl border p-3 text-left transition ${active?.id === item.id ? 'border-pink-400 bg-pink-50' : 'border-black/10 bg-white hover:bg-black/5'}`}
+              >
+                <p className="text-xs uppercase text-black/45">{item.type}</p>
+                <p className="text-xl font-semibold">{item.title}</p>
+                <p className="text-sm text-black/60 line-clamp-1">{item.description}</p>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="flex justify-center rounded-2xl border border-black/10 bg-white p-4">
+          <div>
+            <div className="h-[74vh] w-[360px] overflow-hidden rounded-[1.7rem] bg-black shadow-2xl">
+              <div className="h-14 bg-black" />
+              <div className="h-[calc(74vh-7rem)] bg-black">
+                <FeedPreview active={active} />
+              </div>
+              <div className="h-14 bg-black" />
+            </div>
+            <div className="mt-3 flex items-center justify-between px-1">
+              <div>
+                <p className="text-xl font-semibold">{active?.title || 'Pick content'}</p>
+                <p className="max-w-[340px] text-sm text-black/60">{active?.description}</p>
+              </div>
+              {active && (
+                <Link
+                  to={`/content/${active.id}`}
+                  className="rounded-full bg-pink-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Open
+                </Link>
+              )}
+            </div>
+          </div>
+        </article>
       </section>
 
-      <section className="space-y-3 rounded-xl border border-white/10 bg-slate-900/70 p-4">
-        <h2 className="text-lg font-semibold text-neon-cyan">Interactive Content Library</h2>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            className="flex-1 rounded-md bg-slate-800 p-2"
-            placeholder="Search videos, lessons, experiences"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <select className="rounded-md bg-slate-800 p-2" value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="all">All types</option>
-            <option value="video">Videos</option>
-            <option value="lesson">Interactive lessons</option>
-            <option value="mini">Mini experiences</option>
-          </select>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {browse.map((item) => (
-            <ContentCard key={item.id} item={item} />
-          ))}
-        </div>
+      <section className="grid gap-3 md:grid-cols-3">
+        <article className="rounded-xl border border-black/10 bg-white p-3">
+          <h2 className="mb-2 text-xl font-semibold">Recommended</h2>
+          <ul className="space-y-2 text-sm">
+            {state.recommended.slice(0, 4).map((item) => (
+              <li key={item.id}>{item.title}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="rounded-xl border border-black/10 bg-white p-3">
+          <h2 className="mb-2 text-xl font-semibold">Recently Viewed</h2>
+          <ul className="space-y-2 text-sm">
+            {state.recent.slice(0, 4).map((item) => (
+              <li key={item.id}>{item.title}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="rounded-xl border border-black/10 bg-white p-3">
+          <h2 className="mb-2 text-xl font-semibold">Trending</h2>
+          <ul className="space-y-2 text-sm">
+            {state.trending.slice(0, 4).map((item) => (
+              <li key={item.id}>{item.title}</li>
+            ))}
+          </ul>
+        </article>
       </section>
 
-      {loading ? <p>Loading feed…</p> : null}
-      <ContentRow title="Recommended for you" items={state.recommended} />
-      <ContentRow title="Recently viewed" items={state.recent} />
-      <ContentRow title="Trending" items={state.trending} />
+      {loading ? <p className="text-center">Loading feed…</p> : null}
     </div>
   )
 }

@@ -10,6 +10,7 @@ HoloStem is a **working interactive media + learning platform** with:
 - ✅ Engagement points/progress system
 - ✅ Accessibility settings (large text, simple mode)
 - ✅ Mobile-first responsive UI
+- ✅ TikTok-style feed layout (left nav + center vertical viewer + right action rail)
 - ✅ Deploy-ready for Vercel
 
 ---
@@ -57,7 +58,18 @@ Open `http://localhost:5173`.
 ```env
 VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
+VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
 ```
+
+### Important: fix auth redirect going to localhost
+
+In **Supabase Dashboard → Authentication → URL Configuration**:
+
+1. Set **Site URL** to your production URL (e.g. `https://your-app.vercel.app`).
+2. Add redirect URLs:
+   - `https://your-app.vercel.app/auth`
+   - `http://localhost:5173/auth` (for local dev)
+3. Set `VITE_AUTH_REDIRECT_URL` in Vercel to your production `/auth` URL.
 
 ---
 
