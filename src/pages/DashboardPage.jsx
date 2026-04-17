@@ -1,176 +1,291 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { fetchContent, getDashboardData } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
+import { supabase } from '../lib/supabase'
 
-function FeedPreview({ active }) {
-  if (!active) return <p className="p-4 text-white">No content yet.</p>
+// ─── Video / Embed Player ────────────────────────────────────────────────────
+function FeedPlayer({ item, isActive }) {
+  const videoRef = useRef(null)
 
-  if (active.type === 'mini') {
+  useEffect(() => {
+    if (!videoRef.current) return
+    if (isActive) {
+      videoRef.current.play().catch(() => {})
+    } else {
+      videoRef.current.pause()
+    }
+  }, [isActive])
+
+  if (!item) return null
+
+  const isYoutube =
+    item.media_url?.includes('youtube.com') || item.media_url?.includes('youtu.be')
+
+  if (item.type === 'mini') {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-black text-center text-white">
-        <p className="text-2xl font-semibold">Mini Experience</p>
-        <p className="mt-3 max-w-xs text-xl text-white/80">Open this card to play the interactive tap challenge and earn points.</p>
+      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-black text-white">
+        <div className="text-6xl mb-4">🎮</div>
+        <p className="text-2xl font-bold">Mini Experience</p>
+        <p className="mt-2 max-w-xs text-center text-white/70 text-base">
+          Tap the button below to play and earn points
+        </p>
+      </div>
+    )
+  }
+
+  if (isYoutube) {
+    // Convert watch URL to embed URL
+    const embedUrl = item.media_url
+      .replace('watch?v=', 'embed/')
+      .replace('youtu.be/', 'youtube.com/embed/')
+    const src = isActive ? `${embedUrl}?autoplay=1&mute=0&controls=0&loop=1` : embedUrl
+
+    return (
+      <iframe
+        key={isActive ? 'active' : 'inactive'}
+        title={item.title}
+        src={src}
+        className="h-full w-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    )
+  }
+
+  if (item.media_url) {
+    return (
+      <video
+        ref={videoRef}
+        src={item.media_url}
+        className="h-full w-full object-cover"
+        loop
+        playsInline
+        muted={false}
+      />
+    )
+  }
+
+  // Fallback: lesson or no media
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-slate-900 to-black text-white px-8 text-center">
+      <div className="text-5xl mb-4">📚</div>
+      <p className="text-xl font-bold">{item.title}</p>
+      <p className="mt-2 text-white/60 text-sm">{item.description}</p>
+    </div>
+  )
+}
+
+// ─── Action Rail ─────────────────────────────────────────────────────────────
+function ActionRail({ item, onLike, liked, likeCount }) {
+  return (
+    <div className="flex flex-col items-center gap-5 pb-4">
+      {/* Creator avatar */}
+      <div className="relative">
+        <Link to={item?.username ? `/u/${item.username}` : '#'}>
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-lg">
+            {(item?.username || '?')[0].toUpperCase()}
+          </div>
+        </Link>
+        {/* Follow "+" badge */}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold border border-white">
+          +
+        </div>
+      </div>
+
+      {/* Like */}
+      <button
+        onClick={onLike}
+        className="flex flex-col items-center gap-1 group"
+        aria-label="Like"
+      >
+        <div className={`text-3xl transition-transform group-active:scale-125 ${liked ? 'scale-110' : ''}`}>
+          {liked ? '❤️' : '🤍'}
+        </div>
+        <span className="text-white text-xs font-semibold drop-shadow">{likeCount}</span>
+      </button>
+
+      {/* Comment */}
+      <Link
+        to={item?.id ? `/content/${item.id}` : '#'}
+        className="flex flex-col items-center gap-1"
+        aria-label="Comment"
+      >
+        <div className="text-3xl">💬</div>
+        <span className="text-white text-xs font-semibold drop-shadow">
+          {item?.comment_count ?? 0}
+        </span>
+      </Link>
+
+      {/* Share */}
+      <button
+        className="flex flex-col items-center gap-1"
+        aria-label="Share"
+        onClick={() => {
+          if (navigator.share && item) {
+            navigator.share({ title: item.title, url: window.location.href }).catch(() => {})
+          }
+        }}
+      >
+        <div className="text-3xl">↗️</div>
+        <span className="text-white text-xs font-semibold drop-shadow">Share</span>
+      </button>
+
+      {/* Open full */}
+      <Link
+        to={item?.id ? `/content/${item.id}` : '#'}
+        className="flex flex-col items-center gap-1"
+        aria-label="Open"
+      >
+        <div className="text-3xl">⤢</div>
+        <span className="text-white text-xs font-semibold drop-shadow">Open</span>
+      </Link>
+    </div>
+  )
+}
+
+// ─── Single Feed Item ─────────────────────────────────────────────────────────
+function FeedItem({ item, isActive, index }) {
+  const { user } = useAuth()
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(item?.like_count ?? 0)
+
+  function handleLike() {
+    if (!user) return
+    setLiked((prev) => !prev)
+    setLikeCount((prev) => (liked ? prev - 1 : prev + 1))
+    // TODO: persist like to Supabase user_likes table
+  }
+
+  return (
+    <div className="relative h-screen w-full flex-shrink-0 bg-black snap-start snap-always overflow-hidden">
+      {/* Media fills the whole screen */}
+      <div className="absolute inset-0">
+        <FeedPlayer item={item} isActive={isActive} />
+      </div>
+
+      {/* Dark gradient overlay at bottom */}
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+
+      {/* Bottom left: creator + caption */}
+      <div className="absolute bottom-0 left-0 right-16 p-4 pb-6 text-white">
+        {item?.username && (
+          <Link
+            to={`/u/${item.username}`}
+            className="mb-1 inline-flex items-center gap-1.5 font-bold text-base hover:underline"
+          >
+            <span className="h-7 w-7 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold">
+              {item.username[0].toUpperCase()}
+            </span>
+            @{item.username}
+          </Link>
+        )}
+        <p className="text-base font-semibold leading-snug drop-shadow-md line-clamp-2">
+          {item?.title}
+        </p>
+        {item?.description && (
+          <p className="mt-0.5 text-sm text-white/75 line-clamp-2 leading-snug">
+            {item.description}
+          </p>
+        )}
+        <span className="mt-2 inline-block rounded-full bg-white/20 backdrop-blur px-2 py-0.5 text-xs capitalize">
+          {item?.type}
+        </span>
+      </div>
+
+      {/* Right action rail */}
+      <div className="absolute bottom-6 right-2 flex flex-col items-center">
+        <ActionRail item={item} onLike={handleLike} liked={liked} likeCount={likeCount} />
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
+export default function DashboardPage() {
+  const { user } = useAuth()
+  const [feed, setFeed] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const containerRef = useRef(null)
+  const observerRef = useRef(null)
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const [, browseData] = await Promise.all([
+        getDashboardData(user?.id),
+        fetchContent({ search: '', category: 'all' }),
+      ])
+      setFeed(browseData)
+      setLoading(false)
+    }
+    load()
+  }, [user?.id])
+
+  // IntersectionObserver: track which slide is visible
+  useEffect(() => {
+    if (!containerRef.current || feed.length === 0) return
+
+    observerRef.current?.disconnect()
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = Number(entry.target.dataset.index)
+            setActiveIndex(idx)
+          }
+        })
+      },
+      { root: containerRef.current, threshold: 0.6 }
+    )
+
+    observerRef.current = observer
+
+    const children = containerRef.current.querySelectorAll('[data-index]')
+    children.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [feed])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-black">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
+          <p className="text-white/60 text-sm">Loading feed…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (feed.length === 0) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white gap-4">
+        <div className="text-5xl">📭</div>
+        <p className="text-xl font-semibold">No content yet</p>
+        <Link to="/upload" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
+          Upload the first video
+        </Link>
       </div>
     )
   }
 
   return (
-    active.media_url?.includes('youtube.com') || active.media_url?.includes('youtu.be') ? (
-      <iframe
-        title={active.title}
-        src={active.media_url}
-        className="h-full w-full"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
-    ) : (
-      <video src={active.media_url} className="h-full w-full object-cover" autoPlay loop controls />
-    )
-  )
-}
+    // Full-screen snap-scroll container — overrides the parent padding
+    <div
+      ref={containerRef}
+      className="fixed inset-0 overflow-y-scroll snap-y snap-mandatory"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+    >
+      <style>{`div::-webkit-scrollbar { display: none; }`}</style>
 
-export default function DashboardPage() {
-  const { user } = useAuth()
-  const [state, setState] = useState({ recommended: [], trending: [], recent: [], progress: null })
-  const [browse, setBrowse] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('all')
-  const [activeId, setActiveId] = useState('')
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const [dashboardData, browseData] = await Promise.all([
-        getDashboardData(user?.id),
-        fetchContent({ search, category }),
-      ])
-
-      setState(dashboardData)
-      setBrowse(browseData)
-      setActiveId((prev) => prev || browseData[0]?.id || '')
-      setLoading(false)
-    }
-    load()
-  }, [user?.id, search, category])
-
-  const active = useMemo(() => browse.find((item) => item.id === activeId) || browse[0], [activeId, browse])
-
-  return (
-    <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[minmax(320px,480px)_minmax(320px,1fr)]">
-        <article className="rounded-2xl border border-black/10 bg-white p-4">
-          <h1 className="text-[2rem] font-bold text-pink-600">For You</h1>
-          <p className="text-xl text-black/55">
-            Recommended, recent, and trending content for {user?.user_metadata?.full_name || user?.email || 'Guest'}.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-2">
-            <input
-              className="rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-xl"
-              placeholder="Search videos, lessons, experiences"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select
-              className="rounded-xl border border-black/10 bg-black/5 px-3 py-2 text-xl"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="all">All types</option>
-              <option value="video">Videos</option>
-              <option value="lesson">Interactive lessons</option>
-              <option value="mini">Mini experiences</option>
-            </select>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-2 text-lg">
-            <div className="rounded-lg bg-pink-50 p-2">Points: {state.progress?.points ?? 0}</div>
-            <div className="rounded-lg bg-pink-50 p-2">Completed: {state.progress?.completed_count ?? 0}</div>
-            <div className="rounded-lg bg-pink-50 p-2">Level: {state.progress?.level ?? 1}</div>
-          </div>
-
-          <div className="mt-5 space-y-2">
-            {browse.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setActiveId(item.id)}
-                className={`w-full cursor-pointer rounded-xl border p-3 text-left transition ${active?.id === item.id ? 'border-pink-400 bg-pink-50' : 'border-black/10 bg-white hover:bg-black/5'}`}
-              >
-                <p className="text-xs uppercase text-black/45">{item.type}</p>
-                <p className="text-xl font-semibold">{item.title}</p>
-                <p className="text-sm text-black/60 line-clamp-1">{item.description}</p>
-                {item.username && (
-                  <Link to={`/u/${item.username}`} className="mt-1 inline-block text-xs text-pink-600 hover:underline">
-                    @{item.username}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="flex justify-center rounded-2xl border border-black/10 bg-white p-4">
-          <div>
-            <div className="h-[74vh] w-[360px] overflow-hidden rounded-[1.7rem] bg-black shadow-2xl">
-              <div className="h-14 bg-black" />
-              <div className="h-[calc(74vh-7rem)] bg-black">
-                <FeedPreview active={active} />
-              </div>
-              <div className="h-14 bg-black" />
-            </div>
-            <div className="mt-3 flex items-center justify-between px-1">
-              <div>
-                <p className="text-xl font-semibold">{active?.title || 'Pick content'}</p>
-                <p className="max-w-[340px] text-sm text-black/60">{active?.description}</p>
-                {active?.username && (
-                  <Link to={`/u/${active.username}`} className="text-xs text-pink-600 hover:underline">
-                    @{active.username}
-                  </Link>
-                )}
-              </div>
-              {active && (
-                <Link
-                  to={`/content/${active.id}`}
-                  className="rounded-full bg-pink-600 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Open
-                </Link>
-              )}
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <article className="rounded-xl border border-black/10 bg-white p-3">
-          <h2 className="mb-2 text-xl font-semibold">Recommended</h2>
-          <ul className="space-y-2 text-sm">
-            {state.recommended.slice(0, 4).map((item) => (
-              <li key={item.id}>{item.title}</li>
-            ))}
-          </ul>
-        </article>
-        <article className="rounded-xl border border-black/10 bg-white p-3">
-          <h2 className="mb-2 text-xl font-semibold">Recently Viewed</h2>
-          <ul className="space-y-2 text-sm">
-            {state.recent.slice(0, 4).map((item) => (
-              <li key={item.id}>{item.title}</li>
-            ))}
-          </ul>
-        </article>
-        <article className="rounded-xl border border-black/10 bg-white p-3">
-          <h2 className="mb-2 text-xl font-semibold">Trending</h2>
-          <ul className="space-y-2 text-sm">
-            {state.trending.slice(0, 4).map((item) => (
-              <li key={item.id}>{item.title}</li>
-            ))}
-          </ul>
-        </article>
-      </section>
-
-      {loading ? <p className="text-center">Loading feed…</p> : null}
+      {feed.map((item, index) => (
+        <div key={item.id} data-index={index} className="h-screen w-full snap-start snap-always">
+          <FeedItem item={item} isActive={index === activeIndex} index={index} />
+        </div>
+      ))}
     </div>
   )
 }
