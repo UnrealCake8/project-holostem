@@ -1,10 +1,15 @@
 import { fallbackContent } from '../data/fallbackContent'
 import { hasSupabaseConfig, supabase } from './supabase'
 
+// ─── Content ──────────────────────────────────────────────────────────────────
+
 export async function fetchContent({ search = '', category = 'all' } = {}) {
   if (!hasSupabaseConfig) return fallbackContent
 
-  let query = supabase.from('contents').select('*').order('created_at', { ascending: false })
+  let query = supabase
+    .from('contents')
+    .select('*')
+    .order('created_at', { ascending: false })
 
   if (category !== 'all') query = query.eq('type', category)
   if (search.trim()) query = query.ilike('title', `%${search.trim()}%`)
@@ -16,7 +21,11 @@ export async function fetchContent({ search = '', category = 'all' } = {}) {
 
 export async function fetchContentById(id) {
   if (!hasSupabaseConfig) return fallbackContent.find((item) => item.id === id)
-  const { data, error } = await supabase.from('contents').select('*').eq('id', id).single()
+  const { data, error } = await supabase
+    .from('contents')
+    .select('*')
+    .eq('id', id)
+    .single()
   if (error) throw error
   return data
 }
@@ -36,6 +45,76 @@ export async function fetchVideosByUsername(username) {
   return data
 }
 
+export async function deleteContent(contentId) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
+  const { error } = await supabase.from('contents').delete().eq('id', contentId)
+  if (error) throw error
+}
+
+// ─── Likes ────────────────────────────────────────────────────────────────────
+
+export async function fetchLikeStatus(userId, contentId) {
+  if (!hasSupabaseConfig || !userId) return false
+  const { data } = await supabase
+    .from('content_likes')
+    .select('user_id')
+    .eq('user_id', userId)
+    .eq('content_id', contentId)
+    .maybeSingle()
+  return Boolean(data)
+}
+
+export async function likeContent(userId, contentId) {
+  if (!hasSupabaseConfig || !userId) return
+  await supabase
+    .from('content_likes')
+    .upsert({ user_id: userId, content_id: contentId }, { onConflict: 'user_id,content_id' })
+}
+
+export async function unlikeContent(userId, contentId) {
+  if (!hasSupabaseConfig || !userId) return
+  await supabase
+    .from('content_likes')
+    .delete()
+    .eq('user_id', userId)
+    .eq('content_id', contentId)
+}
+
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+export async function fetchComments(contentId) {
+  if (!hasSupabaseConfig) return []
+  const { data, error } = await supabase
+    .from('content_comments')
+    .select('*')
+    .eq('content_id', contentId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function addComment({ userId, contentId, username, body }) {
+  if (!hasSupabaseConfig || !userId) throw new Error('Not authenticated')
+  const { data, error } = await supabase
+    .from('content_comments')
+    .insert({ user_id: userId, content_id: contentId, username, body })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteComment(commentId) {
+  if (!hasSupabaseConfig) return
+  const { error } = await supabase
+    .from('content_comments')
+    .delete()
+    .eq('id', commentId)
+  if (error) throw error
+}
+
+// ─── Progress / Views ─────────────────────────────────────────────────────────
+
 export async function markContentViewed(userId, contentId) {
   if (!hasSupabaseConfig || !userId) return
   await supabase.from('user_views').upsert(
@@ -51,7 +130,11 @@ export async function markContentViewed(userId, contentId) {
 export async function completeContent({ userId, content }) {
   if (!hasSupabaseConfig || !userId || !content) return
 
-  const { data: progress } = await supabase.from('user_progress').select('*').eq('user_id', userId).single()
+  const { data: progress } = await supabase
+    .from('user_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
 
   const newPoints = (progress?.points ?? 0) + (content.points ?? 10)
   const completed = (progress?.completed_count ?? 0) + 1
@@ -76,7 +159,11 @@ export async function getDashboardData(userId) {
   }
 
   const [allRes, recentRes, progressRes] = await Promise.all([
-    supabase.from('contents').select('*').order('created_at', { ascending: false }).limit(12),
+    supabase
+      .from('contents')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(12),
     userId
       ? supabase
           .from('user_views')
@@ -86,8 +173,15 @@ export async function getDashboardData(userId) {
           .limit(6)
       : Promise.resolve({ data: [], error: null }),
     userId
-      ? supabase.from('user_progress').select('*').eq('user_id', userId).single()
-      : Promise.resolve({ data: { points: 0, completed_count: 0, level: 1 }, error: null }),
+      ? supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+      : Promise.resolve({
+          data: { points: 0, completed_count: 0, level: 1 },
+          error: null,
+        }),
   ])
 
   if (allRes.error) throw allRes.error
@@ -105,6 +199,8 @@ export async function getDashboardData(userId) {
   }
 }
 
+// ─── Profile ──────────────────────────────────────────────────────────────────
+
 export async function saveProfile(userId, values) {
   if (!hasSupabaseConfig || !userId) return
   await supabase.from('profiles').upsert({ id: userId, ...values })
@@ -120,11 +216,19 @@ export async function getProfileByUsername(username) {
   if (!username) return null
   if (!hasSupabaseConfig) {
     const firstVideo = fallbackContent.find((item) => item.username === username)
-    return firstVideo ? { username, display_name: username, bio: 'Demo creator profile' } : null
+    return firstVideo
+      ? { username, display_name: username, bio: 'Demo creator profile' }
+      : null
   }
-  const { data } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle()
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle()
   return data
 }
+
+// ─── Upload ───────────────────────────────────────────────────────────────────
 
 export async function createContent(payload) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
@@ -139,11 +243,13 @@ export async function uploadVideoAsset({ file, userId }) {
   const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4'
   const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`
 
-  const { error: uploadError } = await supabase.storage.from('videos').upload(path, file, {
-    cacheControl: '3600',
-    upsert: false,
-    contentType: file.type || 'video/mp4',
-  })
+  const { error: uploadError } = await supabase.storage
+    .from('videos')
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || 'video/mp4',
+    })
 
   if (uploadError) throw uploadError
 
