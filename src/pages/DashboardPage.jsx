@@ -16,13 +16,17 @@ function FeedPreview({ active }) {
   }
 
   return (
-    <iframe
-      title={active.title}
-      src={active.media_url}
-      className="h-full w-full"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    />
+    active.media_url?.includes('youtube.com') || active.media_url?.includes('youtu.be') ? (
+      <iframe
+        title={active.title}
+        src={active.media_url}
+        className="h-full w-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    ) : (
+      <video src={active.media_url} className="h-full w-full object-cover" autoPlay loop controls />
+    )
   )
 }
 
@@ -39,7 +43,7 @@ export default function DashboardPage() {
     async function load() {
       setLoading(true)
       const [dashboardData, browseData] = await Promise.all([
-        getDashboardData(user.id),
+        getDashboardData(user?.id),
         fetchContent({ search, category }),
       ])
 
@@ -49,7 +53,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     load()
-  }, [user.id, search, category])
+  }, [user?.id, search, category])
 
   const active = useMemo(() => browse.find((item) => item.id === activeId) || browse[0], [activeId, browse])
 
@@ -58,7 +62,9 @@ export default function DashboardPage() {
       <section className="grid gap-4 xl:grid-cols-[minmax(320px,480px)_minmax(320px,1fr)]">
         <article className="rounded-2xl border border-black/10 bg-white p-4">
           <h1 className="text-[2rem] font-bold text-pink-600">For You</h1>
-          <p className="text-xl text-black/55">Recommended, recent, and trending content for {user.user_metadata?.full_name || user.email}.</p>
+          <p className="text-xl text-black/55">
+            Recommended, recent, and trending content for {user?.user_metadata?.full_name || user?.email || 'Guest'}.
+          </p>
 
           <div className="mt-4 flex flex-col gap-2">
             <input
@@ -87,16 +93,20 @@ export default function DashboardPage() {
 
           <div className="mt-5 space-y-2">
             {browse.map((item) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
                 onClick={() => setActiveId(item.id)}
-                className={`w-full rounded-xl border p-3 text-left transition ${active?.id === item.id ? 'border-pink-400 bg-pink-50' : 'border-black/10 bg-white hover:bg-black/5'}`}
+                className={`w-full cursor-pointer rounded-xl border p-3 text-left transition ${active?.id === item.id ? 'border-pink-400 bg-pink-50' : 'border-black/10 bg-white hover:bg-black/5'}`}
               >
                 <p className="text-xs uppercase text-black/45">{item.type}</p>
                 <p className="text-xl font-semibold">{item.title}</p>
                 <p className="text-sm text-black/60 line-clamp-1">{item.description}</p>
-              </button>
+                {item.username && (
+                  <Link to={`/u/${item.username}`} className="mt-1 inline-block text-xs text-pink-600 hover:underline">
+                    @{item.username}
+                  </Link>
+                )}
+              </div>
             ))}
           </div>
         </article>
@@ -114,6 +124,11 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xl font-semibold">{active?.title || 'Pick content'}</p>
                 <p className="max-w-[340px] text-sm text-black/60">{active?.description}</p>
+                {active?.username && (
+                  <Link to={`/u/${active.username}`} className="text-xs text-pink-600 hover:underline">
+                    @{active.username}
+                  </Link>
+                )}
               </div>
               {active && (
                 <Link

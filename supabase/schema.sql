@@ -4,6 +4,7 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
+  username text unique,
   bio text,
   age_group text default 'all',
   created_at timestamptz default now()
@@ -11,6 +12,8 @@ create table if not exists public.profiles (
 
 create table if not exists public.contents (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  username text,
   title text not null,
   description text not null,
   type text not null check (type in ('video', 'lesson', 'mini')),
@@ -22,6 +25,11 @@ create table if not exists public.contents (
   is_trending boolean default false,
   created_at timestamptz default now()
 );
+
+alter table public.contents add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.contents add column if not exists username text;
+alter table public.profiles add column if not exists username text;
+create unique index if not exists profiles_username_unique on public.profiles (username);
 
 create table if not exists public.user_progress (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -45,7 +53,11 @@ alter table public.user_views enable row level security;
 
 -- basic policies
 create policy "read contents" on public.contents for select using (true);
-create policy "insert contents auth" on public.contents for insert to authenticated with check (true);
+create policy "insert contents auth" on public.contents for insert to authenticated with check (auth.uid() = user_id);
+
+-- allow uploader to edit/delete own content
+create policy "update own contents" on public.contents for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "delete own contents" on public.contents for delete to authenticated using (auth.uid() = user_id);
 
 create policy "user read own profile" on public.profiles for select to authenticated using (auth.uid() = id);
 create policy "user write own profile" on public.profiles for all to authenticated using (auth.uid() = id) with check (auth.uid() = id);
@@ -63,3 +75,19 @@ values
 ('Build Better Study Habits', 'Interactive tips for daily progress and focus.', 'lesson', 'Learning', 'https://www.youtube.com/embed/IlU-zDU6aQ0', 15, true, false),
 ('Reaction Mini Experience', 'Tap quickly to train your reaction timing.', 'mini', 'Experience', '', 30, false, true)
 on conflict do nothing;
+
+-- Storage bucket for user video uploads (run once).
+insert into storage.buckets (id, name, public)
+values ('videos', 'videos', true)
+on conflict (id) do nothing;
+
+create policy "public read videos"
+on storage.objects
+for select
+using (bucket_id = 'videos');
+
+create policy "authenticated upload videos"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'videos' and auth.uid()::text = (storage.foldername(name))[1]);

@@ -4,17 +4,21 @@ import { getProfile, saveProfile } from '../lib/contentApi'
 
 export default function ProfilePage() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState({ display_name: '', bio: '', age_group: 'all' })
+  const [profile, setProfile] = useState({ display_name: '', username: '', bio: '', age_group: 'all' })
   const [status, setStatus] = useState('')
 
   useEffect(() => {
     async function load() {
       const data = await getProfile(user.id)
       if (data) setProfile(data)
-      else setProfile((prev) => ({ ...prev, display_name: user.user_metadata?.full_name ?? '' }))
+      else setProfile((prev) => ({
+        ...prev,
+        display_name: user.user_metadata?.full_name ?? '',
+        username: user.user_metadata?.username ?? '',
+      }))
     }
     load()
-  }, [user.id, user.user_metadata?.full_name])
+  }, [user.id, user.user_metadata?.full_name, user.user_metadata?.username])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -29,6 +33,10 @@ export default function ProfilePage() {
         <label className="block">
           <span className="mb-1 block text-sm text-slate-300">Display name</span>
           <input className="w-full rounded-md bg-slate-800 p-2" value={profile.display_name || ''} onChange={(e) => setProfile((p) => ({ ...p, display_name: e.target.value }))} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm text-slate-300">Username</span>
+          <input className="w-full rounded-md bg-slate-800 p-2" value={profile.username || ''} onChange={(e) => setProfile((p) => ({ ...p, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))} />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm text-slate-300">Bio</span>

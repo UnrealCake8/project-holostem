@@ -9,6 +9,7 @@ export const fallbackContent = [
     difficulty: 'Beginner',
     points: 20,
     is_trending: true,
+    username: 'holostem_team',
   },
   {
     id: 'fallback-lesson-1',
@@ -20,6 +21,7 @@ export const fallbackContent = [
     difficulty: 'Beginner',
     points: 15,
     is_trending: false,
+    username: 'learning_lab',
   },
   {
     id: 'fallback-mini-1',
@@ -31,5 +33,6 @@ export const fallbackContent = [
     difficulty: 'Easy',
     points: 30,
     is_trending: true,
+    username: 'mini_creator',
   },
 ]

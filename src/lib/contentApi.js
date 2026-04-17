@@ -21,6 +21,21 @@ export async function fetchContentById(id) {
   return data
 }
 
+export async function fetchVideosByUsername(username) {
+  if (!hasSupabaseConfig) {
+    return fallbackContent.filter((item) => item.username === username)
+  }
+
+  const { data, error } = await supabase
+    .from('contents')
+    .select('*')
+    .eq('username', username)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
 export async function markContentViewed(userId, contentId) {
   if (!hasSupabaseConfig || !userId) return
   await supabase.from('user_views').upsert(
@@ -51,7 +66,7 @@ export async function completeContent({ userId, content }) {
 }
 
 export async function getDashboardData(userId) {
-  if (!hasSupabaseConfig || !userId) {
+  if (!hasSupabaseConfig) {
     return {
       recommended: fallbackContent,
       trending: fallbackContent.filter((item) => item.is_trending),
@@ -62,13 +77,17 @@ export async function getDashboardData(userId) {
 
   const [allRes, recentRes, progressRes] = await Promise.all([
     supabase.from('contents').select('*').order('created_at', { ascending: false }).limit(12),
-    supabase
-      .from('user_views')
-      .select('viewed_at, contents(*)')
-      .eq('user_id', userId)
-      .order('viewed_at', { ascending: false })
-      .limit(6),
-    supabase.from('user_progress').select('*').eq('user_id', userId).single(),
+    userId
+      ? supabase
+          .from('user_views')
+          .select('viewed_at, contents(*)')
+          .eq('user_id', userId)
+          .order('viewed_at', { ascending: false })
+          .limit(6)
+      : Promise.resolve({ data: [], error: null }),
+    userId
+      ? supabase.from('user_progress').select('*').eq('user_id', userId).single()
+      : Promise.resolve({ data: { points: 0, completed_count: 0, level: 1 }, error: null }),
   ])
 
   if (allRes.error) throw allRes.error
@@ -97,8 +116,37 @@ export async function getProfile(userId) {
   return data
 }
 
+export async function getProfileByUsername(username) {
+  if (!username) return null
+  if (!hasSupabaseConfig) {
+    const firstVideo = fallbackContent.find((item) => item.username === username)
+    return firstVideo ? { username, display_name: username, bio: 'Demo creator profile' } : null
+  }
+  const { data } = await supabase.from('profiles').select('*').eq('username', username).maybeSingle()
+  return data
+}
+
 export async function createContent(payload) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
   const { error } = await supabase.from('contents').insert(payload)
   if (error) throw error
+}
+
+export async function uploadVideoAsset({ file, userId }) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
+  if (!file) throw new Error('Select a video file first.')
+
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4'
+  const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage.from('videos').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type || 'video/mp4',
+  })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('videos').getPublicUrl(path)
+  return data.publicUrl
 }

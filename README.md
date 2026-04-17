@@ -26,11 +26,12 @@ HoloStem is a **working interactive media + learning platform** with:
 ## Pages included
 
 - `/auth` — login/sign up
-- `/dashboard` — personalized feed + content browser/search/filter
+- `/dashboard` — public TikTok-style feed + content browser/search/filter
 - `/content/:id` — content viewer page
+- `/u/:username` — public creator profile (videos they upload)
 - `/profile` — user profile editor
 - `/settings` — accessibility + UI options
-- `/admin` — simple content uploader (optional extra)
+- `/upload` — user video uploader (TikTok-style posting flow)
 
 ---
 
@@ -52,6 +53,7 @@ Open `http://localhost:5173`.
 2. Copy your project URL + anon key into `.env`.
 3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
 4. In Supabase Auth settings, allow email/password login.
+5. In Supabase Storage, ensure the `videos` bucket exists (the SQL includes this too).
 
 ### Required env vars
 
@@ -95,15 +97,18 @@ And includes starter content rows for quick testing.
   - `lesson`
   - `mini`
 - Clicking opens `/content/:id` viewer.
+- Authenticated users can upload videos from `/upload` directly into Supabase Storage and publish to the feed.
 
 ### Personalized Feed
 - Recommended content
 - Recently viewed content
 - Trending content
+- Feed is publicly viewable without login.
 
 ### Engagement / Progress
 - “Mark as complete” awards points.
 - Dashboard shows points, completed count, and level.
+- Guest users can browse/watch, but login is required for upload, profile editing, and progress tracking.
 
 ### Accessibility + Inclusivity
 - Large text toggle
