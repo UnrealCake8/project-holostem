@@ -68,7 +68,7 @@ export default function UploadPage() {
         <textarea className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="description" placeholder="Description" required />
         <div className="grid gap-2 sm:grid-cols-2">
           <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="category" placeholder="Category" />
-          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="0" />
+          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="Random Folder" />
         </div>
         <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" type="file" name="video" accept="video/*" required />
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={uploading}>
