@@ -35,6 +35,8 @@ export default function UploadPage() {
         throw new Error('Set a username in Profile before uploading.')
       }
 
+      const mediaUrl = await uploadVideoAsset({ file, userId: user.id })
+
       for (const [index, file] of files.entries()) {
         setStatus(`Uploading ${index + 1}/${files.length}: ${file.name}`)
         const mediaUrl = await uploadVideoAsset({ file, userId: user.id })
@@ -88,15 +90,8 @@ export default function UploadPage() {
           type="file"
           name="video"
           accept="video/*"
-          multiple
           required
-          onChange={handleFileChange}
         />
-        <p className="text-xs text-black/50">
-          {selectedCount > 0
-            ? `${selectedCount} video${selectedCount > 1 ? 's' : ''} selected`
-            : 'Select one or more videos.'}
-        </p>
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={uploading}>
           {uploading ? 'Uploading...' : 'Publish videos'}
         </button>

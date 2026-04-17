@@ -53,7 +53,6 @@ Open `http://localhost:5173`.
 2. Copy your project URL + anon key into `.env`.
 3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
 4. In Supabase Auth settings, allow email/password login.
-5. In Supabase Storage, ensure the `videos` bucket exists (the SQL includes this too).
 
 ### Required env vars
 

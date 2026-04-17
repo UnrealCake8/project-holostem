@@ -19,6 +19,7 @@ import {
 // ─── Video / Embed Player ─────────────────────────────────────────────────────
 function FeedPlayer({ item, isActive, isPaused }) {
   const videoRef = useRef(null)
+  const mediaUrl = item?.media_url
 
   useEffect(() => {
     if (!videoRef.current) return
@@ -29,7 +30,7 @@ function FeedPlayer({ item, isActive, isPaused }) {
   if (!item) return null
 
   const isYoutube =
-    item.media_url?.includes('youtube.com') || item.media_url?.includes('youtu.be')
+    mediaUrl?.includes('youtube.com') || mediaUrl?.includes('youtu.be')
 
   if (item.type === 'mini') {
     return (
@@ -44,7 +45,7 @@ function FeedPlayer({ item, isActive, isPaused }) {
   }
 
   if (isYoutube) {
-    const embedUrl = item.media_url
+    const embedUrl = mediaUrl
       .replace('watch?v=', 'embed/')
       .replace('youtu.be/', 'youtube.com/embed/')
     const src = isActive && !isPaused
@@ -62,11 +63,11 @@ function FeedPlayer({ item, isActive, isPaused }) {
     )
   }
 
-  if (item.media_url) {
+  if (mediaUrl) {
     return (
       <video
         ref={videoRef}
-        src={item.media_url}
+        src={mediaUrl}
         className="h-full w-full object-cover"
         loop
         playsInline
