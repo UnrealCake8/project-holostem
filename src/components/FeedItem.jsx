@@ -250,7 +250,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
 
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(item?.like_count ?? 0)
-  const [commentCount, setCommentCount] = useState(item?.comment_count ?? 0)
+  const [commentCount] = useState(item?.comment_count ?? 0)
   const [showComments, setShowComments] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -325,7 +325,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             {item?.title}
           </p>
           {item?.description && (
-            <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug">
+            <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug simple-mode-hidden">
               {item.description}
             </p>
           )}
@@ -367,7 +367,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             >
               {liked ? '❤️' : '🤍'}
             </span>
-            <span className="text-white text-xs font-semibold drop-shadow">{likeCount}</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{likeCount}</span>
           </button>
 
           {/* Comment */}
@@ -377,7 +377,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             aria-label="Comments"
           >
             <span className="text-3xl">💬</span>
-            <span className="text-white text-xs font-semibold drop-shadow">{commentCount}</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{commentCount}</span>
           </button>
 
           {/* Share */}
@@ -387,7 +387,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             aria-label="Share"
           >
             <span className="text-3xl">↗️</span>
-            <span className="text-white text-xs font-semibold drop-shadow">Share</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
           </button>
 
           {/* Delete (owner only) */}
@@ -398,7 +398,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
               aria-label="Delete"
             >
               <span className="text-2xl">🗑️</span>
-              <span className="text-white text-xs font-semibold drop-shadow">Delete</span>
+              <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Delete</span>
             </button>
           )}
         </div>
