@@ -46,10 +46,37 @@ create table if not exists public.user_views (
   primary key (user_id, content_id)
 );
 
+create table if not exists public.liked_videos (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content_id uuid not null references public.contents(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (user_id, content_id)
+);
+
+create table if not exists public.comments (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  content_id uuid not null references public.contents(id) on delete cascade,
+  user_handle text not null,
+  body text not null check (char_length(body) > 0),
+  created_at timestamptz default now()
+);
+
+create table if not exists public.user_follows (
+  follower_id uuid not null references auth.users(id) on delete cascade,
+  following_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz default now(),
+  primary key (follower_id, following_id),
+  check (follower_id <> following_id)
+);
+
 alter table public.profiles enable row level security;
 alter table public.contents enable row level security;
 alter table public.user_progress enable row level security;
 alter table public.user_views enable row level security;
+alter table public.liked_videos enable row level security;
+alter table public.comments enable row level security;
+alter table public.user_follows enable row level security;
 
 -- basic policies
 create policy "read contents" on public.contents for select using (true);
@@ -67,6 +94,17 @@ create policy "user write own progress" on public.user_progress for all to authe
 
 create policy "user read own views" on public.user_views for select to authenticated using (auth.uid() = user_id);
 create policy "user write own views" on public.user_views for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "public read likes" on public.liked_videos for select using (true);
+create policy "user manage own likes" on public.liked_videos for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "public read comments" on public.comments for select using (true);
+create policy "authenticated create comments" on public.comments for insert to authenticated with check (auth.uid() = user_id);
+create policy "user delete own comments" on public.comments for delete to authenticated using (auth.uid() = user_id);
+
+create policy "read follows" on public.user_follows for select using (true);
+create policy "user follow others" on public.user_follows for insert to authenticated with check (auth.uid() = follower_id);
+create policy "user unfollow others" on public.user_follows for delete to authenticated using (auth.uid() = follower_id);
 
 -- starter content
 insert into public.contents (title, description, type, category, media_url, points, recommended, is_trending)
