@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import UploadPage from './pages/UploadPage'
+import VideoPage from './pages/VideoPage'
 
 export default function App() {
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="content/:id" element={<ContentViewerPage />} />
         <Route path="u/:username" element={<PublicProfilePage />} />
+        <Route path="/video/:id" element={<VideoPage />} />
         <Route
           path="profile"
           element={(
