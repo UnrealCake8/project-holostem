@@ -60,12 +60,13 @@ export default function ContentViewerPage() {
   }, [id, user?.id])
 
   async function handleComplete() {
-    if (!content || !user?.id) return
-    await completeContent({ userId: user.id, content })
-    setStatus(`Completed! +${content.points ?? 10} points`)
+  if (!content || !user?.id) return
+  await completeContent({ userId: user.id, content })
+  setStatus(`Completed! +${content.points ?? 10} points`)
   }
 
   if (!content) return <p className="p-4">Loading content...</p>
+  const mediaUrl = content.media_url
 
   return (
     <div className="p-4 space-y-4">
@@ -82,11 +83,11 @@ export default function ContentViewerPage() {
 
       {content.type === 'mini' ? (
         <MiniExperience />
-      ) : content.media_url?.includes('youtube.com') || content.media_url?.includes('youtu.be') ? (
+      ) : mediaUrl?.includes('youtube.com') || mediaUrl?.includes('youtu.be') ? (
         <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
           <iframe
             title={content.title}
-            src={content.media_url}
+            src={mediaUrl}
             className="h-[220px] w-full md:h-[420px]"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -94,7 +95,7 @@ export default function ContentViewerPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
-          <video src={content.media_url} className="h-[220px] w-full object-cover md:h-[420px]" controls autoPlay loop />
+          <video src={mediaUrl} className="h-[220px] w-full object-cover md:h-[420px]" controls autoPlay loop />
         </div>
       )}
 

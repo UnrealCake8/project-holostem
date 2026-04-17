@@ -14,8 +14,9 @@ import {
 
 function VideoPlayer({ item }) {
   const videoRef = useRef(null)
+  const mediaUrl = item.media_url
   const isYoutube =
-    item.media_url?.includes('youtube.com') || item.media_url?.includes('youtu.be')
+    mediaUrl?.includes('youtube.com') || mediaUrl?.includes('youtu.be')
 
   if (item.type === 'mini') {
     return (
@@ -27,7 +28,7 @@ function VideoPlayer({ item }) {
   }
 
   if (isYoutube) {
-    const embedUrl = item.media_url
+    const embedUrl = mediaUrl
       .replace('watch?v=', 'embed/')
       .replace('youtu.be/', 'youtube.com/embed/')
     return (
@@ -41,11 +42,11 @@ function VideoPlayer({ item }) {
     )
   }
 
-  if (item.media_url) {
+  if (mediaUrl) {
     return (
       <video
         ref={videoRef}
-        src={item.media_url}
+        src={mediaUrl}
         className="h-full w-full object-contain bg-black"
         controls
         autoPlay
