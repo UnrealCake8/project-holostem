@@ -58,7 +58,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="p-4 mx-auto max-w-2xl space-y-4">
       <h1 className="text-3xl font-bold text-pink-600">Upload video</h1>
       <p className="text-black/60">Post short videos directly to HoloStem like TikTok-style uploads.</p>
       <p className="text-sm text-black/50">Posting as @{username || 'set-username-in-profile'}</p>

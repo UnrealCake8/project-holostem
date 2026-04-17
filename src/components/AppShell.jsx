@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '../context/useAuth'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { readUiSettings } from '../lib/uiSettings'
 
 const menuItems = [
   { to: '/dashboard', label: 'For You', icon: '🏠' },
@@ -131,10 +132,10 @@ export default function AppShell() {
             </NavLink>
           )}
 
-          <SuggestedAccounts />
+          {!readUiSettings().simpleMode && <SuggestedAccounts />}
         </aside>
 
-        <main className="px-2 py-4 sm:px-4 lg:px-6">
+        <main>
           <Outlet />
         </main>
       </div>

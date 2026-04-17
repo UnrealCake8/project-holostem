@@ -20,7 +20,7 @@ export default function PublicProfilePage() {
   }, [username])
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
       <section className="rounded-2xl border border-black/10 bg-white p-4">
         <h1 className="text-3xl font-bold text-pink-600">@{username}</h1>
         <p className="text-black/60">{profile?.display_name || 'HoloStem creator'}</p>

@@ -19,3 +19,7 @@ body {
 .light body {
   background: #f8fafc;
 }
+
+.simple-mode .simple-mode-hidden {
+  display: none !important;
+}
