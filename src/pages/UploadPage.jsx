@@ -1,11 +1,20 @@
-import { useState } from 'react'
-import { createContent, uploadVideoAsset } from '../lib/contentApi'
+import { useEffect, useState } from 'react'
+import { createContent, getProfile, uploadVideoAsset } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 
 export default function UploadPage() {
   const { user } = useAuth()
   const [status, setStatus] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [username, setUsername] = useState(user.user_metadata?.username || '')
+
+  useEffect(() => {
+    async function loadProfile() {
+      const profile = await getProfile(user.id)
+      if (profile?.username) setUsername(profile.username)
+    }
+    loadProfile()
+  }, [user.id])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -21,12 +30,16 @@ export default function UploadPage() {
     setStatus('Uploading video...')
 
     try {
+      if (!username) {
+        throw new Error('Set a username in Profile before uploading.')
+      }
       const mediaUrl = await uploadVideoAsset({ file, userId: user.id })
 
       await createContent({
         user_id: user.id,
         title: formData.get('title'),
         description: formData.get('description'),
+        username,
         type: 'video',
         media_url: mediaUrl,
         category: formData.get('category') || 'General',
@@ -48,6 +61,7 @@ export default function UploadPage() {
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-3xl font-bold text-pink-600">Upload video</h1>
       <p className="text-black/60">Post short videos directly to HoloStem like TikTok-style uploads.</p>
+      <p className="text-sm text-black/50">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4" onSubmit={handleSubmit}>
         <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="title" placeholder="Caption / title" required />

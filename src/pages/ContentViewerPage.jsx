@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { completeContent, fetchContentById, markContentViewed } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 
@@ -54,13 +54,13 @@ export default function ContentViewerPage() {
     async function load() {
       const data = await fetchContentById(id)
       setContent(data)
-      if (data) await markContentViewed(user.id, data.id)
+      if (data && user?.id) await markContentViewed(user.id, data.id)
     }
     load()
-  }, [id, user.id])
+  }, [id, user?.id])
 
   async function handleComplete() {
-    if (!content) return
+    if (!content || !user?.id) return
     await completeContent({ userId: user.id, content })
     setStatus(`Completed! +${content.points ?? 10} points`)
   }
@@ -73,6 +73,11 @@ export default function ContentViewerPage() {
         <p className="text-xs uppercase text-slate-400">{content.type}</p>
         <h1 className="text-2xl font-bold">{content.title}</h1>
         <p className="mt-1 text-slate-300">{content.description}</p>
+        {content.username && (
+          <Link to={`/u/${content.username}`} className="mt-2 inline-block text-xs text-cyan-300 hover:underline">
+            @{content.username}
+          </Link>
+        )}
       </div>
 
       {content.type === 'mini' ? (
@@ -93,9 +98,10 @@ export default function ContentViewerPage() {
         </div>
       )}
 
-      <button className="rounded-md bg-emerald-400 px-4 py-2 font-semibold text-slate-900" onClick={handleComplete}>
+      <button className="rounded-md bg-emerald-400 px-4 py-2 font-semibold text-slate-900 disabled:opacity-60" onClick={handleComplete} disabled={!user}>
         Mark as complete
       </button>
+      {!user && <p className="text-sm text-slate-400">Login to track completion points.</p>}
       {status && <p className="text-emerald-300">{status}</p>}
     </div>
   )

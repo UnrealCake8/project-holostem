@@ -4,6 +4,7 @@ create extension if not exists "pgcrypto";
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
+  username text unique,
   bio text,
   age_group text default 'all',
   created_at timestamptz default now()
@@ -12,6 +13,7 @@ create table if not exists public.profiles (
 create table if not exists public.contents (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
+  username text,
   title text not null,
   description text not null,
   type text not null check (type in ('video', 'lesson', 'mini')),
@@ -25,6 +27,9 @@ create table if not exists public.contents (
 );
 
 alter table public.contents add column if not exists user_id uuid references auth.users(id) on delete set null;
+alter table public.contents add column if not exists username text;
+alter table public.profiles add column if not exists username text;
+create unique index if not exists profiles_username_unique on public.profiles (username);
 
 create table if not exists public.user_progress (
   user_id uuid primary key references auth.users(id) on delete cascade,

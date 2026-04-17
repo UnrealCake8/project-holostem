@@ -26,8 +26,9 @@ HoloStem is a **working interactive media + learning platform** with:
 ## Pages included
 
 - `/auth` — login/sign up
-- `/dashboard` — personalized feed + content browser/search/filter
+- `/dashboard` — public TikTok-style feed + content browser/search/filter
 - `/content/:id` — content viewer page
+- `/u/:username` — public creator profile (videos they upload)
 - `/profile` — user profile editor
 - `/settings` — accessibility + UI options
 - `/upload` — user video uploader (TikTok-style posting flow)
@@ -102,10 +103,12 @@ And includes starter content rows for quick testing.
 - Recommended content
 - Recently viewed content
 - Trending content
+- Feed is publicly viewable without login.
 
 ### Engagement / Progress
 - “Mark as complete” awards points.
 - Dashboard shows points, completed count, and level.
+- Guest users can browse/watch, but login is required for upload, profile editing, and progress tracking.
 
 ### Accessibility + Inclusivity
 - Large text toggle

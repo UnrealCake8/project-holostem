@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 
 export default function AuthPage() {
   const { user, signIn, signUp, hasSupabaseConfig } = useAuth()
+  const location = useLocation()
   const [mode, setMode] = useState('login')
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
@@ -16,13 +17,14 @@ export default function AuthPage() {
     const email = formData.get('email')
     const password = formData.get('password')
     const fullName = formData.get('fullName')
+    const username = formData.get('username')
 
     setError('')
     setStatus('Working...')
 
     try {
       if (mode === 'signup') {
-        await signUp({ email, password, fullName })
+        await signUp({ email, password, fullName, username })
         setStatus('Check your email to confirm your account, then log in.')
       } else {
         await signIn({ email, password })
@@ -45,6 +47,11 @@ export default function AuthPage() {
             Missing Supabase env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). Auth and data syncing are disabled until configured.
           </p>
         )}
+        {location.state?.from && (
+          <p className="mb-3 rounded-md bg-sky-500/15 p-2 text-xs text-sky-200">
+            You can browse without logging in. Login is required for: {location.state.from}.
+          </p>
+        )}
 
         <div className="mb-4 flex gap-2">
           {['login', 'signup'].map((item) => (
@@ -61,7 +68,10 @@ export default function AuthPage() {
 
         <form className="space-y-3" onSubmit={handleSubmit}>
           {mode === 'signup' && (
-            <input className="w-full rounded-md bg-slate-800 p-2" name="fullName" placeholder="Full name" required />
+            <>
+              <input className="w-full rounded-md bg-slate-800 p-2" name="fullName" placeholder="Full name" required />
+              <input className="w-full rounded-md bg-slate-800 p-2" name="username" placeholder="Username (no spaces)" pattern="^[a-zA-Z0-9_]{3,20}$" required />
+            </>
           )}
           <input className="w-full rounded-md bg-slate-800 p-2" name="email" type="email" placeholder="Email" required />
           <input

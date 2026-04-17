@@ -54,9 +54,15 @@ export default function AppShell() {
             ))}
           </nav>
 
-          <button onClick={handleSignOut} className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5">
-            Logout {user?.email ? `(${user.email})` : ''}
-          </button>
+          {user ? (
+            <button onClick={handleSignOut} className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5">
+              Logout {user?.email ? `(${user.email})` : ''}
+            </button>
+          ) : (
+            <NavLink to="/auth" className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5">
+              Login / Sign up
+            </NavLink>
+          )}
 
           <div className="mt-6 border-t border-black/10 pt-4">
             <p className="mb-2 text-xl font-medium text-black/60">Following accounts</p>
