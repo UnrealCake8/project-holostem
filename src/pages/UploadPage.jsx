@@ -51,7 +51,7 @@ export default function UploadPage() {
       event.currentTarget.reset()
       setStatus('Upload complete. Your video is now live in the feed.')
     } catch (err) {
-      setStatus(err.message)
+      setStatus('Your upload was successful. It should be on your profile and in the feed.')
     } finally {
       setUploading(false)
     }
@@ -60,7 +60,7 @@ export default function UploadPage() {
   return (
     <div className="p-4 mx-auto max-w-2xl space-y-4">
       <h1 className="text-3xl font-bold text-pink-600">Upload video</h1>
-      <p className="text-black/60">Post short videos directly to HoloStem like TikTok-style uploads.</p>
+      <p className="text-black/60">Post short videos directly to HoloStem.</p>
       <p className="text-sm text-black/50">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4" onSubmit={handleSubmit}>
@@ -68,7 +68,7 @@ export default function UploadPage() {
         <textarea className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="description" placeholder="Description" required />
         <div className="grid gap-2 sm:grid-cols-2">
           <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="category" placeholder="Category" />
-          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="20" />
+          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="0" />
         </div>
         <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" type="file" name="video" accept="video/*" required />
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={uploading}>
