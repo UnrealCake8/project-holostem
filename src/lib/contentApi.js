@@ -80,6 +80,19 @@ export async function unlikeContent(userId, contentId) {
     .eq('content_id', contentId)
 }
 
+export async function fetchLikeCount(contentId) {
+  if (!hasSupabaseConfig) return 0
+  const { count, error } = await supabase
+    .from('content_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('content_id', contentId)
+  if (error) {
+    console.error('Error fetching like count:', error)
+    return 0
+  }
+  return count ?? 0
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function fetchComments(contentId) {
