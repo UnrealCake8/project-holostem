@@ -1,40 +1,122 @@
-# HoloStem Full-Stack Scaffold
+# HoloStem (React + Vite + Supabase + Tailwind)
 
-HoloStem now includes a real backend API + database schema foundation:
+HoloStem is a **working interactive media + learning platform** with:
 
-- JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`)
-- User profile API (`/api/users/:username`, `/api/users/me/profile`)
-- Video feed and uploads (`/api/videos/feed`, `/api/videos/upload`)
-- Like and comment APIs (`/api/videos/:videoId/like`, comments endpoints)
-- Public watch feed (no account required), authenticated uploads/profile editing
+- ✅ Auth (signup/login)
+- ✅ Real user dashboard and profile
+- ✅ Supabase-backed persistence (content, views, progress, profile)
+- ✅ Interactive content system (videos, lessons, mini experiences)
+- ✅ Personalized feed blocks (recommended, recently viewed, trending)
+- ✅ Engagement points/progress system
+- ✅ Accessibility settings (large text, simple mode)
+- ✅ Mobile-first responsive UI
+- ✅ TikTok-style feed layout (left nav + center vertical viewer + right action rail)
+- ✅ Deploy-ready for Vercel
 
-## Run Locally
+---
 
-1. Install dependencies
-2. Copy env file
-3. Push Prisma schema
-4. Start API and frontend together
+## Tech stack
+
+- React + Vite
+- Tailwind CSS
+- Supabase (Auth + Postgres)
+
+---
+
+## Pages included
+
+- `/auth` — login/sign up
+- `/dashboard` — personalized feed + content browser/search/filter
+- `/content/:id` — content viewer page
+- `/profile` — user profile editor
+- `/settings` — accessibility + UI options
+- `/admin` — simple content uploader (optional extra)
+
+---
+
+## 1) Install and run
 
 ```bash
 npm install
 cp .env.example .env
-npx prisma db push
-npm run dev:full
+npm run dev
 ```
 
-Frontend: `http://localhost:5173`  
-API: `http://localhost:4000`
+Open `http://localhost:5173`.
 
-## Required Environment Variables
+---
 
-- `DATABASE_URL` (example: `file:./dev.db`)
-- `JWT_SECRET`
-- `CORS_ORIGIN` (example: `http://localhost:5173`)
-- `PORT` (default `4000`)
-- `VITE_API_BASE_URL` (default `http://localhost:4000/api`)
+## 2) Supabase setup
 
-## Vercel Note
+1. Create a Supabase project.
+2. Copy your project URL + anon key into `.env`.
+3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
+4. In Supabase Auth settings, allow email/password login.
 
-Vercel hosts the React frontend. The API needs a backend host
-(e.g. Render, Railway, Fly.io, or Supabase edge/functions).
-Keep `vercel.json` rewrite for SPA routing.
+### Required env vars
+
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
+```
+
+### Important: fix auth redirect going to localhost
+
+In **Supabase Dashboard → Authentication → URL Configuration**:
+
+1. Set **Site URL** to your production URL (e.g. `https://your-app.vercel.app`).
+2. Add redirect URLs:
+   - `https://your-app.vercel.app/auth`
+   - `http://localhost:5173/auth` (for local dev)
+3. Set `VITE_AUTH_REDIRECT_URL` in Vercel to your production `/auth` URL.
+
+---
+
+## 3) Database schema
+
+`supabase/schema.sql` creates:
+
+- `profiles`
+- `contents`
+- `user_progress`
+- `user_views`
+
+And includes starter content rows for quick testing.
+
+---
+
+## 4) Features implemented
+
+### Interactive Content System
+- Grid browsing UI with search and type filter.
+- Supported content types:
+  - `video`
+  - `lesson`
+  - `mini`
+- Clicking opens `/content/:id` viewer.
+
+### Personalized Feed
+- Recommended content
+- Recently viewed content
+- Trending content
+
+### Engagement / Progress
+- “Mark as complete” awards points.
+- Dashboard shows points, completed count, and level.
+
+### Accessibility + Inclusivity
+- Large text toggle
+- Simple mode toggle
+- Mobile/tablet first responsive layout
+
+---
+
+## 5) Deploy to Vercel
+
+1. Push repo to GitHub.
+2. Import into Vercel.
+3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel project environment variables.
+4. Deploy.
+
+No custom server is required for this frontend-Supabase architecture.
