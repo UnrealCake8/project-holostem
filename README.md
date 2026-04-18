@@ -62,6 +62,8 @@ VITE_SUPABASE_ANON_KEY=...
 VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
 ```
 
+> Upload troubleshooting: if uploads fail but the `videos` bucket exists, re-run the storage section of `supabase/schema.sql` so `storage.objects` policies allow authenticated users to upload into paths prefixed with their user ID (for example `USER_UUID/filename.mp4`).
+
 ### Important: fix auth redirect going to localhost
 
 In **Supabase Dashboard → Authentication → URL Configuration**:
