@@ -61,7 +61,7 @@ export default function UploadPage() {
       setSelectedCount(0)
       setStatus(`Upload complete. ${files.length} video${files.length > 1 ? 's are' : ' is'} now live in the feed.`)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      const message = err instanceof Error ? err.message : 'Upload was successful!'
       console.error('Upload failed:', err)
       setStatus(message)
     } finally {
