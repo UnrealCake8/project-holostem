@@ -31,7 +31,7 @@ HoloStem is a **working interactive media + learning platform** with:
 - `/u/:username` — public creator profile (videos they upload)
 - `/profile` — user profile editor
 - `/settings` — accessibility + UI options
-- `/upload` — user video uploader (TikTok-style posting flow)
+- `/upload` — video link publisher (paste direct MP4 URL)
 
 ---
 
@@ -53,7 +53,6 @@ Open `http://localhost:5173`.
 2. Copy your project URL + anon key into `.env`.
 3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
 4. In Supabase Auth settings, allow email/password login.
-5. In Supabase Storage, ensure the `videos` bucket exists (the SQL includes this too).
 
 ### Required env vars
 
@@ -62,6 +61,8 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
 ```
+
+`/upload` now publishes content from a direct `.mp4` URL instead of file uploads.
 
 ### Important: fix auth redirect going to localhost
 
@@ -97,7 +98,7 @@ And includes starter content rows for quick testing.
   - `lesson`
   - `mini`
 - Clicking opens `/content/:id` viewer.
-- Authenticated users can upload videos from `/upload` directly into Supabase Storage and publish to the feed.
+- Authenticated users can publish videos from direct `.mp4` links on `/upload`.
 
 ### Personalized Feed
 - Recommended content
@@ -108,7 +109,7 @@ And includes starter content rows for quick testing.
 ### Engagement / Progress
 - “Mark as complete” awards points.
 - Dashboard shows points, completed count, and level.
-- Guest users can browse/watch, but login is required for upload, profile editing, and progress tracking.
+- Guest users can browse/watch, but login is required for publishing links, profile editing, and progress tracking.
 
 ### Accessibility + Inclusivity
 - Large text toggle

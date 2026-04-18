@@ -9,7 +9,7 @@ import DashboardPage from './pages/DashboardPage'
 import ProfilePage from './pages/ProfilePage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import SettingsPage from './pages/SettingsPage'
-import UploadPage from './pages/UploadPage'
+import VideoLinkPage from './pages/VideoLinkPage'
 import VideoPage from './pages/VideoPage'
 
 export default function App() {
@@ -46,7 +46,7 @@ export default function App() {
           path="upload"
           element={(
             <RequireAuth>
-              <UploadPage />
+              <VideoLinkPage />
             </RequireAuth>
           )}
         />
