@@ -73,6 +73,25 @@ export default function UploadPage() {
     <div className="p-4 mx-auto max-w-2xl space-y-4">
       <h1 className="text-3xl font-bold text-pink-600">Publish video link</h1>
       <p className="text-black/60">Share a direct .mp4 link to the HoloStem feed.</p>
+      <p className="text-sm text-black/70">
+        Need help creating one?{' '}
+        <a
+          className="font-semibold text-pink-600 underline hover:text-pink-700"
+          href="https://unrealcake8.github.io/project-holostem/uploader.html"
+          rel="noreferrer"
+          target="_blank"
+        >
+          HoloStem MP4 Generator
+        </a>
+      </p>
+      <div className="rounded-2xl border border-black/10 bg-white p-4">
+        <h2 className="text-base font-semibold text-black">What is an MP4 link and how can I generate it without using HoloStem MP4 Generator?</h2>
+        <p className="mt-2 text-sm text-black/70">
+          An MP4 link is a direct URL that points straight to a video file ending in <code>.mp4</code>. You can generate one by uploading your video to
+          a cloud storage service (for example Supabase Storage, Cloudinary, Amazon S3, or Google Cloud Storage), then copying the public file URL for
+          that uploaded video. Make sure the file is publicly accessible and the URL opens or downloads the MP4 directly.
+        </p>
+      </div>
       <p className="text-sm text-black/50">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4" onSubmit={handleSubmit}>
