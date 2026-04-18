@@ -80,6 +80,19 @@ export async function unlikeContent(userId, contentId) {
     .eq('content_id', contentId)
 }
 
+export async function fetchLikeCount(contentId) {
+  if (!hasSupabaseConfig) return 0
+  const { count, error } = await supabase
+    .from('content_likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('content_id', contentId)
+  if (error) {
+    console.error('Error fetching like count:', error)
+    return 0
+  }
+  return count ?? 0
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function fetchComments(contentId) {
@@ -217,7 +230,7 @@ export async function getProfileByUsername(username) {
   if (!hasSupabaseConfig) {
     const firstVideo = fallbackContent.find((item) => item.username === username)
     return firstVideo
-      ? { username, display_name: username, bio: 'Demo creator profile' }
+      ? { id: 'mock-id-' + username, username, display_name: username, bio: 'Demo creator profile' }
       : null
   }
   const { data } = await supabase
@@ -226,6 +239,47 @@ export async function getProfileByUsername(username) {
     .eq('username', username)
     .maybeSingle()
   return data
+}
+
+// ─── Follows ──────────────────────────────────────────────────────────────────
+
+export async function fetchFollowStatus(followerId, followingId) {
+  if (!hasSupabaseConfig || !followerId || !followingId) return false
+  const { data } = await supabase
+    .from('user_follows')
+    .select('*')
+    .eq('follower_id', followerId)
+    .eq('following_id', followingId)
+    .maybeSingle()
+  return Boolean(data)
+}
+
+export async function followUser(followerId, followingId) {
+  if (!hasSupabaseConfig || !followerId || !followingId) return
+  await supabase
+    .from('user_follows')
+    .insert({ follower_id: followerId, following_id: followingId })
+}
+
+export async function unfollowUser(followerId, followingId) {
+  if (!hasSupabaseConfig || !followerId || !followingId) return
+  await supabase
+    .from('user_follows')
+    .delete()
+    .eq('follower_id', followerId)
+    .eq('following_id', followingId)
+}
+
+export async function fetchFollowCounts(userId) {
+  if (!hasSupabaseConfig || !userId) return { followers: 0, following: 0 }
+  const [followersRes, followingRes] = await Promise.all([
+    supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+    supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+  ])
+  return {
+    followers: followersRes.count || 0,
+    following: followingRes.count || 0,
+  }
 }
 
 // ─── Upload ───────────────────────────────────────────────────────────────────

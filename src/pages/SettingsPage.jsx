@@ -10,7 +10,7 @@ export default function SettingsPage() {
   }, [settings])
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
       <h1 className="text-2xl font-bold text-neon-cyan">Accessibility + UI Settings</h1>
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
         <label className="flex items-center justify-between rounded-lg bg-black/20 p-3">

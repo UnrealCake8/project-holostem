@@ -39,6 +39,12 @@ export default function DashboardPage() {
     return () => observer.disconnect()
   }, [feed])
 
+  useEffect(() => {
+    if (feed[activeIndex]) {
+      window.history.replaceState(null, '', `/video/${feed[activeIndex].id}`)
+    }
+  }, [activeIndex, feed])
+
   function handleDeleted(id) {
     setFeed((prev) => prev.filter((item) => item.id !== id))
   }
@@ -69,7 +75,7 @@ export default function DashboardPage() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 overflow-y-scroll snap-y snap-mandatory"
+      className="h-screen overflow-y-scroll snap-y snap-mandatory"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
       <style>{`div::-webkit-scrollbar{display:none}`}</style>

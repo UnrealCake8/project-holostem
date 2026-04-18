@@ -173,7 +173,7 @@ export default function VideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white">
+    <div className="p-4 min-h-screen bg-[#0f0f0f] text-white">
       {/* Back nav */}
       <div className="sticky top-0 z-10 flex items-center gap-3 bg-black/80 backdrop-blur px-4 py-3 border-b border-white/10">
         <button

@@ -40,7 +40,7 @@ function SuggestedAccounts() {
   if (accounts.length === 0) return null
 
   return (
-    <div className="mt-6 border-t border-black/10 pt-4">
+    <div className="mt-6 border-t border-black/10 pt-4 simple-mode-hidden">
       <p className="mb-2 text-xl font-medium text-black/60">Suggested accounts</p>
       <ul className="space-y-3">
         {accounts.map((account) => (
@@ -134,7 +134,7 @@ export default function AppShell() {
           <SuggestedAccounts />
         </aside>
 
-        <main className="px-2 py-4 sm:px-4 lg:px-6">
+        <main>
           <Outlet />
         </main>
       </div>

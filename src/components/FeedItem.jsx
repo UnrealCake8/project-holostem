@@ -5,21 +5,25 @@ import {
   likeContent,
   unlikeContent,
   fetchLikeStatus,
+  fetchLikeCount,
   fetchComments,
   addComment,
   deleteComment,
   deleteContent,
+  followUser,
+  unfollowUser,
+  fetchFollowStatus,
 } from '../lib/contentApi'
 
 // ─── Video / Embed Player ─────────────────────────────────────────────────────
-function FeedPlayer({ item, isActive }) {
+function FeedPlayer({ item, isActive, isPaused }) {
   const videoRef = useRef(null)
 
   useEffect(() => {
     if (!videoRef.current) return
-    if (isActive) videoRef.current.play().catch(() => {})
+    if (isActive && !isPaused) videoRef.current.play().catch(() => {})
     else videoRef.current.pause()
-  }, [isActive])
+  }, [isActive, isPaused])
 
   if (!item) return null
 
@@ -42,15 +46,15 @@ function FeedPlayer({ item, isActive }) {
     const embedUrl = item.media_url
       .replace('watch?v=', 'embed/')
       .replace('youtu.be/', 'youtube.com/embed/')
-    const src = isActive
+    const src = isActive && !isPaused
       ? `${embedUrl}?autoplay=1&mute=0&controls=0&loop=1&playlist=${embedUrl.split('/').pop()}`
       : embedUrl
     return (
       <iframe
-        key={isActive ? 'active' : 'inactive'}
+        key={isActive && !isPaused ? 'active' : 'inactive'}
         title={item.title}
         src={src}
-        className="h-full w-full"
+        className="h-full w-full pointer-events-none"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />
@@ -79,7 +83,7 @@ function FeedPlayer({ item, isActive }) {
 }
 
 // ─── Comments Drawer ──────────────────────────────────────────────────────────
-function CommentsDrawer({ item, onClose }) {
+function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted }) {
   const { user } = useAuth()
   const [comments, setComments] = useState([])
   const [body, setBody] = useState('')
@@ -111,6 +115,7 @@ function CommentsDrawer({ item, onClose }) {
       })
       setComments((prev) => [...prev, newComment])
       setBody('')
+      onCommentAdded?.()
     } finally {
       setPosting(false)
     }
@@ -119,6 +124,7 @@ function CommentsDrawer({ item, onClose }) {
   async function handleDeleteComment(commentId) {
     await deleteComment(commentId)
     setComments((prev) => prev.filter((c) => c.id !== commentId))
+    onCommentDeleted?.()
   }
 
   return (
@@ -136,7 +142,7 @@ function CommentsDrawer({ item, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <p className="text-white font-semibold text-base">
-            {item.comment_count ?? comments.length} comments
+            {loading ? '...' : `${comments.length} comments`}
           </p>
           <button onClick={onClose} className="text-white/60 hover:text-white text-xl">✕</button>
         </div>
@@ -254,14 +260,44 @@ export default function FeedItem({ item, isActive, onDeleted }) {
   const [showComments, setShowComments] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [isFollowing, setIsFollowing] = useState(false)
 
   const isOwner = user && item?.user_id && user.id === item.user_id
 
-  // Fetch real like status on mount
+  // Reset pause state when becoming active/inactive
   useEffect(() => {
-    if (!user?.id || !item?.id) return
-    fetchLikeStatus(user.id, item.id).then(setLiked)
-  }, [user?.id, item?.id])
+    setIsPaused(false)
+  }, [isActive])
+
+  // Fetch real like status and counts on mount
+  useEffect(() => {
+    if (!item?.id) return
+    if (user?.id) {
+      fetchLikeStatus(user.id, item.id).then(setLiked)
+      if (item.user_id) {
+        fetchFollowStatus(user.id, item.user_id).then(setIsFollowing)
+      }
+    }
+  }, [user?.id, item?.id, item.user_id])
+
+  // Sync counts on mount or when item changes
+  useEffect(() => {
+    if (!item?.id) return
+    fetchLikeCount(item.id).then((count) => setLikeCount(count))
+    fetchComments(item.id).then((comments) => setCommentCount(comments.length))
+  }, [item?.id])
+
+  async function handleToggleFollow() {
+    if (!user || !item?.user_id || isOwner) return
+    if (isFollowing) {
+      await unfollowUser(user.id, item.user_id)
+      setIsFollowing(false)
+    } else {
+      await followUser(user.id, item.user_id)
+      setIsFollowing(true)
+    }
+  }
 
   async function handleLike() {
     if (!user) {
@@ -301,8 +337,18 @@ export default function FeedItem({ item, isActive, onDeleted }) {
     <>
       <div className="relative h-full w-full bg-black overflow-hidden">
         {/* Media */}
-        <div className="absolute inset-0">
-          <FeedPlayer item={item} isActive={isActive} />
+        <div
+          className="absolute inset-0 cursor-pointer"
+          onClick={() => setIsPaused(!isPaused)}
+        >
+          <FeedPlayer item={item} isActive={isActive} isPaused={isPaused} />
+          {isPaused && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="h-16 w-16 flex items-center justify-center rounded-full bg-black/40 text-white text-3xl">
+                ▶️
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom gradient */}
@@ -325,7 +371,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             {item?.title}
           </p>
           {item?.description && (
-            <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug">
+            <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug simple-mode-hidden">
               {item.description}
             </p>
           )}
@@ -351,9 +397,16 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                 {(item?.username || '?')[0].toUpperCase()}
               </div>
             </Link>
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold border border-white">
-              +
-            </div>
+            {!isOwner && user && (
+              <button
+                onClick={handleToggleFollow}
+                className={`absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full flex items-center justify-center text-white text-xs font-bold border border-white transition-colors ${
+                  isFollowing ? 'bg-gray-500' : 'bg-pink-500'
+                }`}
+              >
+                {isFollowing ? '✓' : '+'}
+              </button>
+            )}
           </div>
 
           {/* Like */}
@@ -367,7 +420,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             >
               {liked ? '❤️' : '🤍'}
             </span>
-            <span className="text-white text-xs font-semibold drop-shadow">{likeCount}</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{likeCount}</span>
           </button>
 
           {/* Comment */}
@@ -377,7 +430,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             aria-label="Comments"
           >
             <span className="text-3xl">💬</span>
-            <span className="text-white text-xs font-semibold drop-shadow">{commentCount}</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{commentCount}</span>
           </button>
 
           {/* Share */}
@@ -387,7 +440,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             aria-label="Share"
           >
             <span className="text-3xl">↗️</span>
-            <span className="text-white text-xs font-semibold drop-shadow">Share</span>
+            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
           </button>
 
           {/* Delete (owner only) */}
@@ -398,7 +451,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
               aria-label="Delete"
             >
               <span className="text-2xl">🗑️</span>
-              <span className="text-white text-xs font-semibold drop-shadow">Delete</span>
+              <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Delete</span>
             </button>
           )}
         </div>
@@ -409,6 +462,8 @@ export default function FeedItem({ item, isActive, onDeleted }) {
         <CommentsDrawer
           item={{ ...item, comment_count: commentCount }}
           onClose={() => setShowComments(false)}
+          onCommentAdded={() => setCommentCount((prev) => prev + 1)}
+          onCommentDeleted={() => setCommentCount((prev) => Math.max(0, prev - 1))}
         />
       )}
 

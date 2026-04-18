@@ -65,10 +65,10 @@ export default function ContentViewerPage() {
     setStatus(`Completed! +${content.points ?? 10} points`)
   }
 
-  if (!content) return <p>Loading content...</p>
+  if (!content) return <p className="p-4">Loading content...</p>
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
         <p className="text-xs uppercase text-slate-400">{content.type}</p>
         <h1 className="text-2xl font-bold">{content.title}</h1>

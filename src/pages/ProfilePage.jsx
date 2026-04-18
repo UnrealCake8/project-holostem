@@ -27,7 +27,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 space-y-4">
       <h1 className="text-2xl font-bold text-neon-cyan">Profile</h1>
       <form className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4" onSubmit={handleSubmit}>
         <label className="block">
