@@ -72,7 +72,20 @@ export default function UploadPage() {
   return (
     <div className="p-4 mx-auto max-w-2xl space-y-4">
       <h1 className="text-3xl font-bold text-pink-600">Publish video link</h1>
-      <p className="text-black/60">Share a direct .mp4 link to the HoloStem feed.</p>
+      <div className="space-y-1">
+        <p className="text-black/60">Share a direct .mp4 link to the HoloStem feed.</p>
+        <p className="text-sm">
+          Need a link? Use the{' '}
+          <a
+            href="https://unrealcake8.github.io/project-holostem/uploader.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-pink-600 underline hover:text-pink-700"
+          >
+            Free HoloStem Link Generator
+          </a>
+        </p>
+      </div>
       <p className="text-sm text-black/50">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4" onSubmit={handleSubmit}>
