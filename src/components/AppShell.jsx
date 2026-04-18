@@ -9,7 +9,7 @@ const menuItems = [
   { to: '/dashboard?tab=explore', label: 'Explore', icon: '🧭' },
   { to: '/dashboard?tab=following', label: 'Following', icon: '🫧' },
   { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
-  { to: '/upload', label: 'Upload', icon: '⬆️' },
+  { to: '/upload', label: 'Add video link', icon: '⬆️' },
   { to: '/profile', label: 'Profile', icon: '👤' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]

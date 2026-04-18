@@ -370,35 +370,10 @@ export async function fetchFollowNotifications(userId) {
   return data ?? []
 }
 
-// ─── Upload ───────────────────────────────────────────────────────────────────
+// ─── Content Creation ─────────────────────────────────────────────────────────
 
 export async function createContent(payload) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
   const { error } = await supabase.from('contents').insert(payload)
   if (error) throw error
-}
-
-export async function uploadVideoAsset({ file, userId }) {
-  if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
-  if (!file) throw new Error('Select a video file first.')
-  if (!userId) throw new Error('You must be logged in to upload videos.')
-
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4'
-  const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('videos')
-    .upload(path, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type || 'video/mp4',
-    })
-
-  if (uploadError) {
-    const reason = uploadError.message || 'Unknown storage error.'
-    throw new Error(`Video upload failed: ${reason}`)
-  }
-
-  const { data } = supabase.storage.from('videos').getPublicUrl(path)
-  return data.publicUrl
 }
