@@ -33,6 +33,7 @@ export default function UploadPage() {
       if (!username) {
         throw new Error('Set a username in Profile before uploading.')
       }
+
       const mediaUrl = await uploadVideoAsset({ file, userId: user.id })
 
       await createContent({
@@ -51,7 +52,9 @@ export default function UploadPage() {
       event.currentTarget.reset()
       setStatus('Upload complete. Your video is now live in the feed.')
     } catch (err) {
-      setStatus('Your upload was successful. It should be on your profile and in the feed.')
+      const message = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+      console.error('Upload failed:', err)
+      setStatus(message)
     } finally {
       setUploading(false)
     }
@@ -68,9 +71,15 @@ export default function UploadPage() {
         <textarea className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="description" placeholder="Description" required />
         <div className="grid gap-2 sm:grid-cols-2">
           <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="category" placeholder="Category" />
-          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="Random Folder" />
+          <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" name="points" type="number" min="5" defaultValue="20" />
         </div>
-        <input className="rounded-xl border border-black/10 bg-black/5 px-3 py-2" type="file" name="video" accept="video/*" required />
+        <input
+          className="rounded-xl border border-black/10 bg-black/5 px-3 py-2"
+          type="file"
+          name="video"
+          accept="video/*"
+          required
+        />
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={uploading}>
           {uploading ? 'Uploading...' : 'Publish video'}
         </button>

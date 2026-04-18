@@ -2,12 +2,12 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useAuth } from '../context/useAuth'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchFollowStatus, followUser, unfollowUser } from '../lib/contentApi'
 
 const menuItems = [
   { to: '/dashboard', label: 'For You', icon: '🏠' },
   { to: '/dashboard?tab=explore', label: 'Explore', icon: '🧭' },
   { to: '/dashboard?tab=following', label: 'Following', icon: '🫧' },
-  { to: '/dashboard?tab=friends', label: 'Friends', icon: '👥' },
   { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
   { to: '/upload', label: 'Upload', icon: '⬆️' },
   { to: '/profile', label: 'Profile', icon: '👤' },
@@ -16,6 +16,7 @@ const menuItems = [
 
 function SuggestedAccounts() {
   const [accounts, setAccounts] = useState([])
+  const [followingMap, setFollowingMap] = useState({})
   const { user } = useAuth()
 
   useEffect(() => {
@@ -37,6 +38,29 @@ function SuggestedAccounts() {
     load()
   }, [user?.id])
 
+  useEffect(() => {
+    async function hydrateStatuses() {
+      if (!user?.id || accounts.length === 0) return
+      const entries = await Promise.all(
+        accounts.map(async (account) => [account.id, await fetchFollowStatus(user.id, account.id)]),
+      )
+      setFollowingMap(Object.fromEntries(entries))
+    }
+    hydrateStatuses()
+  }, [accounts, user?.id])
+
+  async function handleToggleFollow(accountId) {
+    if (!user?.id) return
+    const next = !followingMap[accountId]
+    setFollowingMap((prev) => ({ ...prev, [accountId]: next }))
+    try {
+      if (next) await followUser(user.id, accountId)
+      else await unfollowUser(user.id, accountId)
+    } catch {
+      setFollowingMap((prev) => ({ ...prev, [accountId]: !next }))
+    }
+  }
+
   if (accounts.length === 0) return null
 
   return (
@@ -45,28 +69,42 @@ function SuggestedAccounts() {
       <ul className="space-y-3">
         {accounts.map((account) => (
           <li key={account.id}>
-            <Link
-              to={`/u/${account.username}`}
-              className="flex items-center gap-3 rounded-lg px-1 py-1 transition hover:bg-black/5"
-            >
-              {account.avatar_url ? (
-                <img
-                  src={account.avatar_url}
-                  alt={account.username}
-                  className="h-10 w-10 rounded-full object-cover bg-black/20"
-                />
-              ) : (
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-lg font-bold text-pink-600">
-                  {(account.full_name || account.username || '?')[0].toUpperCase()}
-                </span>
+            <div className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-black/5">
+              <Link
+                to={`/u/${account.username}`}
+                className="flex min-w-0 flex-1 items-center gap-3"
+              >
+                {account.avatar_url ? (
+                  <img
+                    src={account.avatar_url}
+                    alt={account.username}
+                    className="h-10 w-10 rounded-full object-cover bg-black/20"
+                  />
+                ) : (
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-lg font-bold text-pink-600">
+                    {(account.full_name || account.username || '?')[0].toUpperCase()}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold leading-tight">
+                    {account.full_name || account.username}
+                  </p>
+                  <p className="truncate text-sm text-black/45">@{account.username}</p>
+                </div>
+              </Link>
+              {user?.id && user.id !== account.id && (
+                <button
+                  onClick={() => handleToggleFollow(account.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    followingMap[account.id]
+                      ? 'bg-black/10 text-black'
+                      : 'bg-pink-500 text-white'
+                  }`}
+                >
+                  {followingMap[account.id] ? 'Following' : 'Follow'}
+                </button>
               )}
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold leading-tight">
-                  {account.full_name || account.username}
-                </p>
-                <p className="truncate text-sm text-black/45">@{account.username}</p>
-              </div>
-            </Link>
+            </div>
           </li>
         ))}
       </ul>

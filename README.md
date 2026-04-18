@@ -53,7 +53,6 @@ Open `http://localhost:5173`.
 2. Copy your project URL + anon key into `.env`.
 3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
 4. In Supabase Auth settings, allow email/password login.
-5. In Supabase Storage, ensure the `videos` bucket exists (the SQL includes this too).
 
 ### Required env vars
 
@@ -62,6 +61,8 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
 ```
+
+> Upload troubleshooting: if uploads fail but the `videos` bucket exists, re-run the storage section of `supabase/schema.sql` so `storage.objects` policies allow authenticated users to upload into paths prefixed with their user ID (for example `USER_UUID/filename.mp4`).
 
 ### Important: fix auth redirect going to localhost
 
