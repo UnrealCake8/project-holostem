@@ -1,50 +1,28 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
-import {
-  fetchContent,
-  fetchFollowingIds,
-  fetchFollowNotifications,
-  getDashboardData,
-} from '../lib/contentApi'
+import { fetchContent, getDashboardData } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const location = useLocation()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [notifications, setNotifications] = useState([])
   const containerRef = useRef(null)
-  const tab = new URLSearchParams(location.search).get('tab') || 'for-you'
 
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const [, browseData, followingIds, followNotifications] = await Promise.all([
+      const [, browseData] = await Promise.all([
         getDashboardData(user?.id),
         fetchContent({ search: '', category: 'all' }),
-        tab === 'following' && user?.id ? fetchFollowingIds(user.id) : Promise.resolve([]),
-        tab === 'activity' && user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
       ])
-      if (tab === 'following') {
-        const filtered = browseData.filter((item) => followingIds.includes(item.user_id))
-        setFeed(filtered)
-      } else if (tab === 'explore') {
-        const exploreOnly = browseData.filter((item) => item.username === 'holostemexplore')
-        setFeed(exploreOnly)
-      } else if (tab === 'activity') {
-        setFeed([])
-        setNotifications(followNotifications)
-      } else {
-        setFeed(browseData)
-      }
+      setFeed(browseData)
       setLoading(false)
-      setActiveIndex(0)
     }
     load()
-  }, [user?.id, tab])
+  }, [user?.id])
 
   useEffect(() => {
     if (!containerRef.current || feed.length === 0) return
@@ -82,58 +60,14 @@ export default function DashboardPage() {
     )
   }
 
-  if (tab === 'activity') {
-    return (
-      <div className="mx-auto max-w-2xl p-4">
-        <section className="rounded-2xl border border-black/10 bg-white p-4">
-          <h1 className="text-2xl font-bold text-pink-600">Activity</h1>
-          <p className="mt-1 text-sm text-black/50">Recent follows</p>
-          <div className="mt-4 space-y-3">
-            {notifications.length === 0 && (
-              <p className="text-sm text-black/50">No one has followed you yet.</p>
-            )}
-            {notifications.map((notification) => (
-              <div
-                key={`${notification.follower_id}-${notification.created_at}`}
-                className="rounded-xl border border-black/10 bg-black/[0.02] p-3"
-              >
-                <p className="text-sm text-black/80">
-                  <span className="font-semibold">
-                    @{notification.profiles?.username || 'user'}
-                  </span>{' '}
-                  started following you.
-                </p>
-                <p className="mt-1 text-xs text-black/45">
-                  {new Date(notification.created_at).toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    )
-  }
-
   if (feed.length === 0) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white gap-4">
         <div className="text-5xl">📭</div>
-        <p className="text-xl font-semibold">
-          {tab === 'following'
-            ? 'No posts from people you follow yet'
-            : tab === 'explore'
-              ? 'No explore posts yet from @holostemexplore'
-              : 'No content yet'}
-        </p>
-        {tab === 'following' || tab === 'explore' ? (
-          <Link to="/dashboard" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
-            Browse For You feed
-          </Link>
-        ) : (
-          <Link to="/upload" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
-            Upload the first video
-          </Link>
-        )}
+        <p className="text-xl font-semibold">No content yet</p>
+        <Link to="/upload" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
+          Upload the first video
+        </Link>
       </div>
     )
   }
