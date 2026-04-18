@@ -56,7 +56,7 @@ export async function deleteContent(contentId) {
 export async function fetchLikeStatus(userId, contentId) {
   if (!hasSupabaseConfig || !userId) return false
   const { data } = await supabase
-    .from('liked_videos')
+    .from('content_likes')
     .select('user_id')
     .eq('user_id', userId)
     .eq('content_id', contentId)
@@ -67,14 +67,14 @@ export async function fetchLikeStatus(userId, contentId) {
 export async function likeContent(userId, contentId) {
   if (!hasSupabaseConfig || !userId) return
   await supabase
-    .from('liked_videos')
+    .from('content_likes')
     .upsert({ user_id: userId, content_id: contentId }, { onConflict: 'user_id,content_id' })
 }
 
 export async function unlikeContent(userId, contentId) {
   if (!hasSupabaseConfig || !userId) return
   await supabase
-    .from('liked_videos')
+    .from('content_likes')
     .delete()
     .eq('user_id', userId)
     .eq('content_id', contentId)
@@ -83,7 +83,7 @@ export async function unlikeContent(userId, contentId) {
 export async function fetchLikeCount(contentId) {
   if (!hasSupabaseConfig) return 0
   const { count, error } = await supabase
-    .from('liked_videos')
+    .from('content_likes')
     .select('*', { count: 'exact', head: true })
     .eq('content_id', contentId)
   if (error) {
@@ -98,22 +98,19 @@ export async function fetchLikeCount(contentId) {
 export async function fetchComments(contentId) {
   if (!hasSupabaseConfig) return []
   const { data, error } = await supabase
-    .from('comments')
+    .from('content_comments')
     .select('*')
     .eq('content_id', contentId)
     .order('created_at', { ascending: true })
   if (error) throw error
-  return (data ?? []).map((row) => ({
-    ...row,
-    user_handle: row.user_handle || row.username || 'user',
-  }))
+  return data ?? []
 }
 
 export async function addComment({ userId, contentId, username, body }) {
   if (!hasSupabaseConfig || !userId) throw new Error('Not authenticated')
   const { data, error } = await supabase
-    .from('comments')
-    .insert({ user_id: userId, content_id: contentId, user_handle: username, body })
+    .from('content_comments')
+    .insert({ user_id: userId, content_id: contentId, username, body })
     .select()
     .single()
   if (error) throw error
@@ -123,7 +120,7 @@ export async function addComment({ userId, contentId, username, body }) {
 export async function deleteComment(commentId) {
   if (!hasSupabaseConfig) return
   const { error } = await supabase
-    .from('comments')
+    .from('content_comments')
     .delete()
     .eq('id', commentId)
   if (error) throw error
@@ -242,132 +239,6 @@ export async function getProfileByUsername(username) {
     .eq('username', username)
     .maybeSingle()
   return data
-}
-
-export async function getUserIdByUsername(username) {
-  if (!username) return null
-  if (!hasSupabaseConfig) return null
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('username', username)
-    .maybeSingle()
-  if (error) throw error
-  return data?.id ?? null
-}
-
-// ─── Following / Followers ───────────────────────────────────────────────────
-
-export async function fetchFollowStatus(followerId, followingId) {
-  if (!hasSupabaseConfig || !followerId || !followingId) return false
-  const { data } = await supabase
-    .from('user_follows')
-    .select('follower_id')
-    .eq('follower_id', followerId)
-    .eq('following_id', followingId)
-    .maybeSingle()
-  return Boolean(data)
-}
-
-export async function followUser(followerId, followingId) {
-  if (!hasSupabaseConfig || !followerId || !followingId || followerId === followingId) return
-  const { error } = await supabase
-    .from('user_follows')
-    .upsert({ follower_id: followerId, following_id: followingId }, { onConflict: 'follower_id,following_id' })
-  if (error) throw error
-}
-
-export async function unfollowUser(followerId, followingId) {
-  if (!hasSupabaseConfig || !followerId || !followingId) return
-  const { error } = await supabase
-    .from('user_follows')
-    .delete()
-    .eq('follower_id', followerId)
-    .eq('following_id', followingId)
-  if (error) throw error
-}
-
-export async function fetchFollowerCount(userId) {
-  if (!hasSupabaseConfig || !userId) return 0
-  const { count, error } = await supabase
-    .from('user_follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('following_id', userId)
-  if (error) throw error
-  return count ?? 0
-}
-
-export async function fetchFollowingCount(userId) {
-  if (!hasSupabaseConfig || !userId) return 0
-  const { count, error } = await supabase
-    .from('user_follows')
-    .select('*', { count: 'exact', head: true })
-    .eq('follower_id', userId)
-  if (error) throw error
-  return count ?? 0
-}
-
-export async function fetchFollowingIds(userId) {
-  if (!hasSupabaseConfig || !userId) return []
-  const { data, error } = await supabase
-    .from('user_follows')
-    .select('following_id')
-    .eq('follower_id', userId)
-  if (error) throw error
-  return (data ?? []).map((row) => row.following_id).filter(Boolean)
-}
-
-export async function fetchFollowersForUser(userId) {
-  if (!hasSupabaseConfig || !userId) return []
-  const { data, error } = await supabase
-    .from('user_follows')
-    .select(`
-      follower_id,
-      profiles!user_follows_follower_id_fkey (
-        username,
-        display_name
-      )
-    `)
-    .eq('following_id', userId)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data ?? []
-}
-
-export async function fetchFollowingForUser(userId) {
-  if (!hasSupabaseConfig || !userId) return []
-  const { data, error } = await supabase
-    .from('user_follows')
-    .select(`
-      following_id,
-      profiles!user_follows_following_id_fkey (
-        username,
-        display_name
-      )
-    `)
-    .eq('follower_id', userId)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data ?? []
-}
-
-export async function fetchFollowNotifications(userId) {
-  if (!hasSupabaseConfig || !userId) return []
-  const { data, error } = await supabase
-    .from('user_follows')
-    .select(`
-      follower_id,
-      created_at,
-      profiles!user_follows_follower_id_fkey (
-        username,
-        display_name
-      )
-    `)
-    .eq('following_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(30)
-  if (error) throw error
-  return data ?? []
 }
 
 // ─── Upload ───────────────────────────────────────────────────────────────────

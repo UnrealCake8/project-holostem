@@ -10,10 +10,6 @@ import {
   addComment,
   deleteComment,
   deleteContent,
-  fetchFollowStatus,
-  followUser,
-  unfollowUser,
-  fetchFollowerCount,
 } from '../lib/contentApi'
 
 // ─── Video / Embed Player ─────────────────────────────────────────────────────
@@ -162,10 +158,10 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted }) {
           {comments.map((c) => (
             <div key={c.id} className="flex gap-3 items-start">
               <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                {(c.user_handle || '?')[0].toUpperCase()}
+                {(c.username || '?')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white/70 text-xs font-semibold mb-0.5">@{c.user_handle}</p>
+                <p className="text-white/70 text-xs font-semibold mb-0.5">@{c.username}</p>
                 <p className="text-white text-sm leading-snug break-words">{c.body}</p>
                 <p className="text-white/30 text-xs mt-1">
                   {new Date(c.created_at).toLocaleDateString()}
@@ -263,8 +259,6 @@ export default function FeedItem({ item, isActive, onDeleted }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [followersCount, setFollowersCount] = useState(0)
 
   const isOwner = user && item?.user_id && user.id === item.user_id
 
@@ -287,16 +281,6 @@ export default function FeedItem({ item, isActive, onDeleted }) {
     fetchLikeCount(item.id).then((count) => setLikeCount(count))
     fetchComments(item.id).then((comments) => setCommentCount(comments.length))
   }, [item?.id])
-
-  useEffect(() => {
-    if (!item?.user_id) return
-    fetchFollowerCount(item.user_id).then(setFollowersCount).catch(() => {})
-    if (user?.id && user.id !== item.user_id) {
-      fetchFollowStatus(user.id, item.user_id).then(setIsFollowing).catch(() => {})
-    } else {
-      setIsFollowing(false)
-    }
-  }, [item?.user_id, user?.id])
 
   async function handleLike() {
     if (!user) {
@@ -329,24 +313,6 @@ export default function FeedItem({ item, isActive, onDeleted }) {
       navigator.share({ title: item.title, url }).catch(() => {})
     } else {
       navigator.clipboard.writeText(url)
-    }
-  }
-
-  async function handleFollowToggle() {
-    if (!item?.user_id || isOwner) return
-    if (!user) {
-      navigate('/auth')
-      return
-    }
-    const next = !isFollowing
-    setIsFollowing(next)
-    setFollowersCount((prev) => (next ? prev + 1 : Math.max(0, prev - 1)))
-    try {
-      if (next) await followUser(user.id, item.user_id)
-      else await unfollowUser(user.id, item.user_id)
-    } catch {
-      setIsFollowing(!next)
-      setFollowersCount((prev) => (!next ? prev + 1 : Math.max(0, prev - 1)))
     }
   }
 
@@ -414,24 +380,10 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                 {(item?.username || '?')[0].toUpperCase()}
               </div>
             </Link>
-            {!isOwner && (
-              <button
-                onClick={handleFollowToggle}
-                className={`absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold border ${
-                  isFollowing
-                    ? 'bg-white text-black border-white'
-                    : 'bg-pink-500 text-white border-white'
-                }`}
-              >
-                {isFollowing ? 'Following' : 'Follow'}
-              </button>
-            )}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold border border-white">
+              +
+            </div>
           </div>
-          {item?.user_id && (
-            <span className="text-white text-[11px] font-semibold drop-shadow simple-mode-hidden -mt-3">
-              {followersCount} followers
-            </span>
-          )}
 
           {/* Like */}
           <button

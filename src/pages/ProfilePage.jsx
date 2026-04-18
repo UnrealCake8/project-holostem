@@ -1,22 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/useAuth'
-import {
-  getProfile,
-  saveProfile,
-  fetchFollowerCount,
-  fetchFollowingCount,
-  fetchFollowersForUser,
-  fetchFollowingForUser,
-} from '../lib/contentApi'
+import { getProfile, saveProfile } from '../lib/contentApi'
 
 export default function ProfilePage() {
   const { user } = useAuth()
   const [profile, setProfile] = useState({ display_name: '', username: '', bio: '', age_group: 'all' })
   const [status, setStatus] = useState('')
-  const [followersCount, setFollowersCount] = useState(0)
-  const [followingCount, setFollowingCount] = useState(0)
-  const [followers, setFollowers] = useState([])
-  const [following, setFollowing] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -31,22 +20,6 @@ export default function ProfilePage() {
     load()
   }, [user.id, user.user_metadata?.full_name, user.user_metadata?.username])
 
-  useEffect(() => {
-    async function loadSocialData() {
-      const [followerCount, followingCountValue, followersData, followingData] = await Promise.all([
-        fetchFollowerCount(user.id),
-        fetchFollowingCount(user.id),
-        fetchFollowersForUser(user.id),
-        fetchFollowingForUser(user.id),
-      ])
-      setFollowersCount(followerCount)
-      setFollowingCount(followingCountValue)
-      setFollowers(followersData)
-      setFollowing(followingData)
-    }
-    loadSocialData()
-  }, [user.id])
-
   async function handleSubmit(event) {
     event.preventDefault()
     await saveProfile(user.id, profile)
@@ -56,12 +29,6 @@ export default function ProfilePage() {
   return (
     <div className="p-4 space-y-4">
       <h1 className="text-2xl font-bold text-neon-cyan">Profile</h1>
-      <section className="rounded-xl border border-white/10 bg-white/5 p-4">
-        <div className="flex gap-6 text-sm text-white">
-          <p><span className="font-bold">{followersCount}</span> followers</p>
-          <p><span className="font-bold">{followingCount}</span> following</p>
-        </div>
-      </section>
       <form className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4" onSubmit={handleSubmit}>
         <label className="block">
           <span className="mb-1 block text-sm text-slate-300">Display name</span>
@@ -87,26 +54,6 @@ export default function ProfilePage() {
         <button className="rounded-md bg-neon-cyan px-3 py-2 font-semibold text-slate-900">Save</button>
         {status && <p className="text-emerald-300">{status}</p>}
       </form>
-      <section className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <p className="mb-2 text-sm text-slate-300">Followers</p>
-          <div className="space-y-1 text-sm text-slate-200">
-            {followers.length === 0 && <p className="text-slate-400">No followers yet.</p>}
-            {followers.slice(0, 10).map((entry) => (
-              <p key={entry.follower_id}>@{entry.profiles?.username || 'user'}</p>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <p className="mb-2 text-sm text-slate-300">Following</p>
-          <div className="space-y-1 text-sm text-slate-200">
-            {following.length === 0 && <p className="text-slate-400">Not following anyone yet.</p>}
-            {following.slice(0, 10).map((entry) => (
-              <p key={entry.following_id}>@{entry.profiles?.username || 'user'}</p>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
