@@ -4,11 +4,19 @@
 
 :root {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --app-bg: #0b1220;
+  --app-panel: #111a2b;
+  --app-card: #162033;
+  --app-text: #e5edf7;
+  --app-muted: #94a3b8;
+  --app-border: rgba(148, 163, 184, 0.25);
+  --app-input: #1e293b;
 }
 
 body {
   margin: 0;
-  background: #020617;
+  background: var(--app-bg);
+  color: var(--app-text);
 }
 
 .simple-mode * {
@@ -17,9 +25,42 @@ body {
 }
 
 .light body {
-  background: #f8fafc;
+  --app-bg: #f3f4f6;
+  --app-panel: #ffffff;
+  --app-card: #ffffff;
+  --app-text: #131313;
+  --app-muted: #475569;
+  --app-border: rgba(15, 23, 42, 0.12);
+  --app-input: #f1f5f9;
 }
 
 .simple-mode .simple-mode-hidden {
   display: none !important;
+}
+
+.theme-app-bg {
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.theme-panel {
+  background: var(--app-panel);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.theme-card {
+  background: var(--app-card);
+  border-color: var(--app-border);
+  color: var(--app-text);
+}
+
+.theme-muted {
+  color: var(--app-muted);
+}
+
+.theme-input {
+  background: var(--app-input);
+  border-color: var(--app-border);
+  color: var(--app-text);
 }
