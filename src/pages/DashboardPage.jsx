@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchContent,
   fetchFollowingIds,
@@ -9,17 +9,142 @@ import {
 } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
+import {
+  acknowledge80,
+  acknowledgeLimit,
+  acknowledgeSessionPrompt,
+  addExtension,
+  addUsageSeconds,
+  getDayString,
+  markVideoSeen,
+  readUsageSettings,
+  readUsageState,
+  resetSession,
+  saveUsageSettings,
+} from '../lib/usageLimits'
+
+const feedModes = ['for-you', 'following', 'explore']
+
+function MindfulModal({
+  type,
+  settings,
+  usage,
+  onClose,
+  onTakeBreak,
+  onContinue,
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [countdown, setCountdown] = useState(10)
+
+  useEffect(() => {
+    if (!confirming) return
+    if (countdown <= 0) return
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [confirming, countdown])
+
+  function handleConfirmContinue() {
+    if (!confirming) {
+      setConfirming(true)
+      return
+    }
+    if (countdown > 0) return
+    onContinue()
+  }
+
+  const title =
+    type === 'eighty'
+      ? 'You are close to today\'s watch goal'
+      : type === 'session'
+        ? 'Session complete'
+        : 'You reached your watch goal'
+
+  const body =
+    type === 'eighty'
+      ? `Today: ${Math.round(usage.minutesUsed)} / ${settings.dailyLimitMinutes} minutes.`
+      : type === 'session'
+        ? `You watched ${usage.sessionVideos} videos in this session.`
+        : `Today: ${Math.round(usage.minutesUsed)} / ${settings.dailyLimitMinutes + usage.extraMinutes} minutes.`
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="theme-card w-full max-w-md rounded-2xl border p-4" onClick={(event) => event.stopPropagation()}>
+        <p className="text-lg font-semibold">{title}</p>
+        <p className="mt-1 text-sm theme-muted">{body}</p>
+        <div className="mt-4 grid gap-2">
+          <button className="rounded-full bg-white/10 px-4 py-2 text-sm" onClick={onTakeBreak}>Take a short break</button>
+          <button className="rounded-full bg-pink-600 px-4 py-2 text-sm font-semibold text-white" onClick={handleConfirmContinue}>
+            {confirming
+              ? countdown > 0
+                ? `Breathe ${countdown}s to continue`
+                : `Continue for ${settings.extensionMinutes} more minutes`
+              : `Continue mindfully (+${settings.extensionMinutes} min)`}
+          </button>
+          <button className="rounded-full border border-white/20 px-4 py-2 text-sm" onClick={onClose}>Done for now</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UsageOnboarding({ onSave }) {
+  const [dailyLimitMinutes, setDailyLimitMinutes] = useState(60)
+  const [videosPerSession, setVideosPerSession] = useState(10)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4">
+      <div className="theme-card w-full max-w-lg rounded-2xl border p-4">
+        <p className="text-lg font-semibold">Set your mindful defaults</p>
+        <p className="mt-1 text-sm theme-muted">These are reminders, not hard locks. You can adjust anytime in Settings.</p>
+        <label className="mt-3 block text-sm">
+          Daily watch goal
+          <select className="theme-input mt-1 w-full rounded-lg border p-2" value={dailyLimitMinutes} onChange={(e) => setDailyLimitMinutes(Number(e.target.value))}>
+            <option value={30}>30 minutes</option>
+            <option value={45}>45 minutes</option>
+            <option value={60}>60 minutes</option>
+            <option value={90}>90 minutes</option>
+          </select>
+        </label>
+        <label className="mt-3 block text-sm">
+          Videos per session
+          <select className="theme-input mt-1 w-full rounded-lg border p-2" value={videosPerSession} onChange={(e) => setVideosPerSession(Number(e.target.value))}>
+            <option value={5}>5 videos</option>
+            <option value={10}>10 videos</option>
+            <option value={20}>20 videos</option>
+          </select>
+        </label>
+        <button
+          className="mt-4 w-full rounded-full bg-pink-600 px-4 py-2 font-semibold text-white"
+          onClick={() => onSave({ onboarded: true, dailyLimitMinutes, videosPerSession })}
+        >
+          Start with mindful defaults
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
   const [notifications, setNotifications] = useState([])
+  const [usageSettings, setUsageSettings] = useState(readUsageSettings)
+  const [usageState, setUsageState] = useState(() => readUsageState(getDayString()))
+  const [modalType, setModalType] = useState('')
+  const [touchStart, setTouchStart] = useState(null)
   const containerRef = useRef(null)
   const tab = new URLSearchParams(location.search).get('tab') || 'for-you'
   const searchQuery = new URLSearchParams(location.search).get('q') || ''
+  const dayKey = getDayString()
+
+  const usageRatio = useMemo(() => {
+    const total = usageSettings.dailyLimitMinutes + usageState.extraMinutes
+    return total > 0 ? usageState.minutesUsed / total : 0
+  }, [usageSettings.dailyLimitMinutes, usageState.extraMinutes, usageState.minutesUsed])
 
   useEffect(() => {
     async function load() {
@@ -62,18 +187,96 @@ export default function DashboardPage() {
       { root: containerRef.current, threshold: 0.6 },
     )
     const children = containerRef.current.querySelectorAll('[data-feed-index]')
-    children.forEach((el) => observer.observe(el))
+    children.forEach((element) => observer.observe(element))
     return () => observer.disconnect()
   }, [feed])
 
   useEffect(() => {
-    if (feed[activeIndex]) {
-      window.history.replaceState(null, '', `/video/${feed[activeIndex].id}`)
+    const activeItem = feed[activeIndex]
+    if (!activeItem) return
+    window.history.replaceState(null, '', `/video/${activeItem.id}`)
+    const nextUsage = markVideoSeen(activeItem.id, dayKey)
+    setTimeout(() => setUsageState(nextUsage), 0)
+  }, [activeIndex, dayKey, feed])
+
+  useEffect(() => {
+    if (tab === 'activity' || feed.length === 0) return undefined
+    const timer = setInterval(() => {
+      const next = addUsageSeconds(5, dayKey)
+      setUsageState(next)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [dayKey, feed.length, tab])
+
+  useEffect(() => {
+    if (modalType) return
+    if (!usageSettings.onboarded) return
+    if (usageRatio >= 1 && !usageState.limitPromptShown) {
+      setTimeout(() => setModalType('limit'), 0)
+      acknowledgeLimit(dayKey)
+      return
     }
-  }, [activeIndex, feed])
+    if (usageRatio >= 0.8 && !usageState.prompt80Shown) {
+      setTimeout(() => setModalType('eighty'), 0)
+      acknowledge80(dayKey)
+      return
+    }
+    if (usageState.sessionVideos >= usageSettings.videosPerSession && usageState.sessionPromptShownAt !== usageState.sessionVideos) {
+      setTimeout(() => setModalType('session'), 0)
+      acknowledgeSessionPrompt(usageState.sessionVideos, dayKey)
+    }
+  }, [dayKey, modalType, usageRatio, usageSettings.onboarded, usageSettings.videosPerSession, usageState.limitPromptShown, usageState.prompt80Shown, usageState.sessionPromptShownAt, usageState.sessionVideos])
 
   function handleDeleted(id) {
     setFeed((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  function updateMode(nextTab) {
+    const params = new URLSearchParams(location.search)
+    if (nextTab === 'for-you') params.delete('tab')
+    else params.set('tab', nextTab)
+    const query = params.toString()
+    navigate(`/dashboard${query ? `?${query}` : ''}`)
+  }
+
+  function cycleMode(direction) {
+    const currentIndex = feedModes.indexOf(tab)
+    if (currentIndex === -1) return
+    const nextIndex = currentIndex + direction
+    if (nextIndex < 0 || nextIndex >= feedModes.length) return
+    updateMode(feedModes[nextIndex])
+  }
+
+  function handleTouchStart(event) {
+    const touch = event.changedTouches[0]
+    setTouchStart({ x: touch.clientX, y: touch.clientY })
+  }
+
+  function handleTouchEnd(event) {
+    if (!touchStart || tab === 'activity') return
+    const touch = event.changedTouches[0]
+    const dx = touch.clientX - touchStart.x
+    const dy = Math.abs(touch.clientY - touchStart.y)
+    if (Math.abs(dx) < 60 || dy > 80) return
+    if (dx < 0) cycleMode(1)
+    else cycleMode(-1)
+  }
+
+  function handleContinue() {
+    const next = addExtension(usageSettings.extensionMinutes, dayKey)
+    setUsageState(next)
+    setModalType('')
+  }
+
+  function handleTakeBreak() {
+    const next = resetSession(dayKey)
+    setUsageState(next)
+    setModalType('')
+  }
+
+  function handleSaveOnboarding(nextSettings) {
+    saveUsageSettings(nextSettings)
+    setUsageSettings(readUsageSettings())
   }
 
   if (loading) {
@@ -144,25 +347,51 @@ export default function DashboardPage() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-screen overflow-y-scroll snap-y snap-mandatory"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      <style>{`div::-webkit-scrollbar{display:none}`}</style>
-      {feed.map((item, index) => (
-        <div
-          key={item.id}
-          data-feed-index={index}
-          className="h-screen w-full snap-start snap-always"
-        >
-          <FeedItem
-            item={item}
-            isActive={index === activeIndex}
-            onDeleted={handleDeleted}
-          />
-        </div>
-      ))}
-    </div>
+    <>
+      {!usageSettings.onboarded && <UsageOnboarding onSave={handleSaveOnboarding} />}
+      {modalType && (
+        <MindfulModal
+          type={modalType}
+          settings={usageSettings}
+          usage={usageState}
+          onClose={() => setModalType('')}
+          onTakeBreak={handleTakeBreak}
+          onContinue={handleContinue}
+        />
+      )}
+
+      <div className="pointer-events-none fixed left-3 top-3 z-30 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur">
+        {Math.round(usageState.minutesUsed)}m / {usageSettings.dailyLimitMinutes + usageState.extraMinutes}m
+      </div>
+      <button
+        onClick={() => cycleMode(1)}
+        className="fixed left-1/2 top-3 z-30 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur"
+      >
+        {tab === 'for-you' ? 'For You' : tab === 'following' ? 'Following' : 'Explore'} · Swipe ↔
+      </button>
+
+      <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="h-screen overflow-y-scroll snap-y snap-mandatory"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <style>{`div::-webkit-scrollbar{display:none}`}</style>
+        {feed.map((item, index) => (
+          <div
+            key={item.id}
+            data-feed-index={index}
+            className="h-screen w-full snap-start snap-always"
+          >
+            <FeedItem
+              item={item}
+              isActive={index === activeIndex}
+              onDeleted={handleDeleted}
+            />
+          </div>
+        ))}
+      </div>
+    </>
   )
 }

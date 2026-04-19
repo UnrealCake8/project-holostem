@@ -14,6 +14,13 @@ const menuItems = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+const mobileNavItems = [
+  { to: '/dashboard', label: 'Home', icon: '🏠' },
+  { to: '/upload', label: 'Upload', icon: '⬆️' },
+  { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
+  { to: '/profile', label: 'Profile', icon: '👤' },
+]
+
 function SuggestedAccounts() {
   const [accounts, setAccounts] = useState([])
   const [followingMap, setFollowingMap] = useState({})
@@ -146,7 +153,7 @@ export default function AppShell() {
   return (
     <div className="theme-app-bg min-h-screen">
       <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[280px_1fr_120px]">
-        <aside className="theme-panel border-r p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+        <aside className="theme-panel hidden border-r p-4 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-auto">
           <Link to="/dashboard" className="text-4xl font-black tracking-tight">
             HoloStem
           </Link>
@@ -201,10 +208,31 @@ export default function AppShell() {
           <SuggestedAccounts />
         </aside>
 
-        <main>
+        <main className="pb-20 lg:pb-0">
           <Outlet />
         </main>
       </div>
+
+      <nav className="theme-panel fixed inset-x-0 bottom-0 z-40 border-t px-2 py-2 lg:hidden">
+        <ul className="grid grid-cols-4 gap-1">
+          {mobileNavItems.map((item) => {
+            const active = location.pathname === item.to || (item.to.includes('?') && location.pathname === '/dashboard' && location.search.includes('tab=activity'))
+            return (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={`flex flex-col items-center justify-center rounded-xl px-1 py-2 text-xs font-medium ${
+                    active ? 'bg-pink-500/15 text-pink-500' : 'theme-muted'
+                  }`}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
     </div>
   )
 }
