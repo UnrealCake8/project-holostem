@@ -256,6 +256,24 @@ export async function getUserIdByUsername(username) {
   return data?.id ?? null
 }
 
+export async function fetchProfileAvatarsByUserIds(userIds = []) {
+  const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
+  if (uniqueIds.length === 0) return {}
+  if (!hasSupabaseConfig) return {}
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, avatar_url')
+    .in('id', uniqueIds)
+
+  if (error) throw error
+
+  return (data ?? []).reduce((map, row) => {
+    map[row.id] = row.avatar_url || ''
+    return map
+  }, {})
+}
+
 // ─── Following / Followers ───────────────────────────────────────────────────
 
 export async function fetchFollowStatus(followerId, followingId) {

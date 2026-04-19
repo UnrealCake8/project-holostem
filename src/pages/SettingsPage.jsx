@@ -10,9 +10,9 @@ export default function SettingsPage() {
   }, [settings])
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="theme-app-bg p-4 space-y-4">
       <h1 className="text-2xl font-bold text-neon-cyan">Accessibility + UI Settings</h1>
-      <div className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="theme-card space-y-3 rounded-xl border p-4">
         <label className="flex items-center justify-between rounded-lg bg-black/20 p-3">
           <span>Large text mode</span>
           <input type="checkbox" checked={settings.largeText} onChange={(e) => setSettings((s) => ({ ...s, largeText: e.target.checked }))} />

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import {
   fetchContentById,
+  getProfile,
   fetchLikeStatus,
   likeContent,
   unlikeContent,
@@ -79,6 +80,7 @@ export default function VideoPage() {
   const [posting, setPosting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
   const bottomRef = useRef(null)
 
   const isOwner = user && item?.user_id && user.id === item.user_id
@@ -93,6 +95,12 @@ export default function VideoPage() {
       setItem(content)
       setLikeCount(content?.like_count ?? 0)
       setComments(commentsData)
+      if (content?.user_id) {
+        const profile = await getProfile(content.user_id)
+        setAvatarUrl(profile?.avatar_url || '')
+      } else {
+        setAvatarUrl('')
+      }
       setLoading(false)
     }
     load()
@@ -207,9 +215,17 @@ export default function VideoPage() {
               to={`/u/${item.username}`}
               className="inline-flex items-center gap-2 mb-2 hover:underline"
             >
-              <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold">
-                {item.username[0].toUpperCase()}
-              </span>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={`${item.username} avatar`}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold">
+                  {item.username[0].toUpperCase()}
+                </span>
+              )}
               <span className="font-semibold text-base">@{item.username}</span>
             </Link>
           )}

@@ -65,11 +65,11 @@ function SuggestedAccounts() {
 
   return (
     <div className="mt-6 border-t border-black/10 pt-4 simple-mode-hidden">
-      <p className="mb-2 text-xl font-medium text-black/60">Suggested accounts</p>
+      <p className="mb-2 text-xl font-medium theme-muted">Suggested accounts</p>
       <ul className="space-y-3">
         {accounts.map((account) => (
           <li key={account.id}>
-            <div className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-black/5">
+            <div className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-black/10">
               <Link
                 to={`/u/${account.username}`}
                 className="flex min-w-0 flex-1 items-center gap-3"
@@ -89,7 +89,7 @@ function SuggestedAccounts() {
                   <p className="truncate text-base font-semibold leading-tight">
                     {account.full_name || account.username}
                   </p>
-                  <p className="truncate text-sm text-black/45">@{account.username}</p>
+                  <p className="truncate text-sm theme-muted">@{account.username}</p>
                 </div>
               </Link>
               {user?.id && user.id !== account.id && (
@@ -97,7 +97,7 @@ function SuggestedAccounts() {
                   onClick={() => handleToggleFollow(account.id)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     followingMap[account.id]
-                      ? 'bg-black/10 text-black'
+                      ? 'bg-black/15 text-current'
                       : 'bg-pink-500 text-white'
                   }`}
                 >
@@ -123,13 +123,13 @@ export default function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f3f3] text-[#131313]">
+    <div className="theme-app-bg min-h-screen">
       <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[280px_1fr_120px]">
-        <aside className="border-r border-black/10 bg-white p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+        <aside className="theme-panel border-r p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
           <Link to="/dashboard" className="text-4xl font-black tracking-tight">
             HoloStem
           </Link>
-          <div className="mt-4 rounded-full bg-black/5 px-4 py-2 text-sm text-black/50">
+          <div className="mt-4 rounded-full bg-black/10 px-4 py-2 text-sm theme-muted">
             🔍 Search
           </div>
           <nav className="mt-4 space-y-1">
@@ -143,7 +143,7 @@ export default function AppShell() {
                     location.search === item.to.replace('/dashboard', '')
                   const active = isActive || activeByQuery
                   return `flex items-center gap-3 rounded-lg px-3 py-2 text-lg font-semibold transition ${
-                    active ? 'bg-pink-50 text-pink-600' : 'hover:bg-black/5'
+                    active ? 'bg-pink-500/15 text-pink-500' : 'hover:bg-black/10'
                   }`
                 }}
               >
@@ -156,14 +156,14 @@ export default function AppShell() {
           {user ? (
             <button
               onClick={handleSignOut}
-              className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5"
+              className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
             >
               Logout {user?.email ? `(${user.email})` : ''}
             </button>
           ) : (
             <NavLink
               to="/auth"
-              className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5"
+              className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
             >
               Login / Sign up
             </NavLink>
