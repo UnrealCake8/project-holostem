@@ -19,13 +19,14 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState([])
   const containerRef = useRef(null)
   const tab = new URLSearchParams(location.search).get('tab') || 'for-you'
+  const searchQuery = new URLSearchParams(location.search).get('q') || ''
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       const [, browseData, followingIds, followNotifications] = await Promise.all([
         getDashboardData(user?.id),
-        fetchContent({ search: '', category: 'all' }),
+        fetchContent({ search: searchQuery, category: 'all' }),
         tab === 'following' && user?.id ? fetchFollowingIds(user.id) : Promise.resolve([]),
         tab === 'activity' && user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
       ])
@@ -48,7 +49,7 @@ export default function DashboardPage() {
       setActiveIndex(0)
     }
     load()
-  }, [user?.id, tab])
+  }, [user?.id, tab, searchQuery])
 
   useEffect(() => {
     if (!containerRef.current || feed.length === 0) return
@@ -124,10 +125,10 @@ export default function DashboardPage() {
         <div className="text-5xl">📭</div>
         <p className="text-xl font-semibold">
           {tab === 'following'
-            ? 'No posts from people you follow yet'
+            ? (searchQuery ? 'No matching posts from people you follow yet' : 'No posts from people you follow yet')
             : tab === 'explore'
-              ? 'No explore posts yet from @holostemexplore'
-              : 'No content yet'}
+              ? (searchQuery ? 'No matching explore posts yet from @holostemexplore' : 'No explore posts yet from @holostemexplore')
+              : (searchQuery ? 'No videos matched your search' : 'No content yet')}
         </p>
         {tab === 'following' || tab === 'explore' ? (
           <Link to="/dashboard" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">

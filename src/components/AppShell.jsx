@@ -116,10 +116,31 @@ export default function AppShell() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const currentSearchQuery = searchParams.get('q') ?? ''
+  const currentTab = searchParams.get('tab') || 'for-you'
+  const [searchText, setSearchText] = useState(currentSearchQuery)
+
+  useEffect(() => {
+    setSearchText(currentSearchQuery)
+  }, [currentSearchQuery])
 
   async function handleSignOut() {
     await signOut()
     navigate('/auth')
+  }
+
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+    const params = new URLSearchParams()
+    if (currentTab && currentTab !== 'for-you') {
+      params.set('tab', currentTab)
+    }
+    if (searchText.trim()) {
+      params.set('q', searchText.trim())
+    }
+    const query = params.toString()
+    navigate(`/dashboard${query ? `?${query}` : ''}`)
   }
 
   return (
@@ -129,18 +150,26 @@ export default function AppShell() {
           <Link to="/dashboard" className="text-4xl font-black tracking-tight">
             HoloStem
           </Link>
-          <div className="mt-4 rounded-full bg-black/10 px-4 py-2 text-sm theme-muted">
-            🔍 Search
-          </div>
+          <form className="mt-4" onSubmit={handleSearchSubmit}>
+            <label className="sr-only" htmlFor="app-search">Search videos</label>
+            <input
+              id="app-search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              className="theme-input w-full rounded-full border px-4 py-2 text-sm"
+              placeholder="🔍 Search videos"
+              type="search"
+            />
+          </form>
           <nav className="mt-4 space-y-1">
             {menuItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) => {
-                  const activeByQuery =
-                    location.pathname === '/dashboard' &&
-                    location.search === item.to.replace('/dashboard', '')
+                  const itemSearch = item.to.split('?')[1] || ''
+                  const itemTab = new URLSearchParams(itemSearch).get('tab') || 'for-you'
+                  const activeByQuery = location.pathname === '/dashboard' && currentTab === itemTab
                   const active = isActive || activeByQuery
                   return `flex items-center gap-3 rounded-lg px-3 py-2 text-lg font-semibold transition ${
                     active ? 'bg-pink-500/15 text-pink-500' : 'hover:bg-black/10'
