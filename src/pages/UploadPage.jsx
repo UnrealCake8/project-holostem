@@ -61,7 +61,7 @@ export default function UploadPage() {
       event.currentTarget.reset()
       setStatus('Video link published! It is now live in the feed.')
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Your video should be published. This error message is irrelevant but the app can't restrict it at the moment.'
+      const message = err instanceof Error ? err.message : "Your video should be published. This fallback message is only shown when the app cannot read the real error yet.";
       console.error('Publish failed:', err)
       setStatus(message)
     } finally {
