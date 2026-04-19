@@ -79,20 +79,33 @@ export default function PublicProfilePage() {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <section className="rounded-2xl border border-black/10 bg-white p-4 space-y-3">
+    <div className="theme-app-bg p-4 space-y-4">
+      <section className="theme-card rounded-2xl border p-4 space-y-3">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex items-start gap-3">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={`${username} avatar`}
+                className="h-14 w-14 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-purple-600 text-xl font-bold text-white">
+                {(username || '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div>
             <h1 className="text-3xl font-bold text-pink-600">@{username}</h1>
-            <p className="text-black/60">{profile?.display_name || 'HoloStem creator'}</p>
-            <p className="text-sm text-black/50">{profile?.bio || 'No bio yet.'}</p>
+            <p className="theme-muted">{profile?.display_name || 'HoloStem creator'}</p>
+            <p className="text-sm theme-muted">{profile?.bio || 'No bio yet.'}</p>
+            </div>
           </div>
           {!isSelf && (
             <button
               onClick={handleFollowToggle}
               disabled={!user?.id || !profileUserId}
               className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                isFollowing ? 'bg-black/10 text-black' : 'bg-pink-600 text-white'
+                isFollowing ? 'bg-black/15 text-current' : 'bg-pink-600 text-white'
               } disabled:opacity-50`}
             >
               {isFollowing ? 'Following' : 'Follow'}
@@ -107,23 +120,23 @@ export default function PublicProfilePage() {
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl border border-black/10 bg-white p-4">
-          <p className="mb-2 text-sm font-semibold text-black/60">Followers</p>
+        <div className="theme-card rounded-2xl border p-4">
+          <p className="mb-2 text-sm font-semibold theme-muted">Followers</p>
           <div className="space-y-2">
-            {followers.length === 0 && <p className="text-sm text-black/40">No followers yet.</p>}
+            {followers.length === 0 && <p className="text-sm theme-muted">No followers yet.</p>}
             {followers.slice(0, 8).map((entry) => (
-              <p key={entry.follower_id} className="text-sm text-black/70">
+              <p key={entry.follower_id} className="text-sm theme-muted">
                 @{entry.profiles?.username || 'user'} · {entry.profiles?.display_name || 'HoloStem user'}
               </p>
             ))}
           </div>
         </div>
-        <div className="rounded-2xl border border-black/10 bg-white p-4">
-          <p className="mb-2 text-sm font-semibold text-black/60">Following</p>
+        <div className="theme-card rounded-2xl border p-4">
+          <p className="mb-2 text-sm font-semibold theme-muted">Following</p>
           <div className="space-y-2">
-            {following.length === 0 && <p className="text-sm text-black/40">Not following anyone yet.</p>}
+            {following.length === 0 && <p className="text-sm theme-muted">Not following anyone yet.</p>}
             {following.slice(0, 8).map((entry) => (
-              <p key={entry.following_id} className="text-sm text-black/70">
+              <p key={entry.following_id} className="text-sm theme-muted">
                 @{entry.profiles?.username || 'user'} · {entry.profiles?.display_name || 'HoloStem user'}
               </p>
             ))}
@@ -133,10 +146,10 @@ export default function PublicProfilePage() {
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {videos.map((video) => (
-          <Link key={video.id} to={`/content/${video.id}`} className="rounded-xl border border-black/10 bg-white p-3 hover:bg-black/5">
-            <p className="text-xs uppercase text-black/50">{video.type}</p>
+          <Link key={video.id} to={`/content/${video.id}`} className="theme-card rounded-xl border p-3 hover:bg-black/10">
+            <p className="text-xs uppercase theme-muted">{video.type}</p>
             <p className="font-semibold">{video.title}</p>
-            <p className="text-sm text-black/60 line-clamp-2">{video.description}</p>
+            <p className="text-sm theme-muted line-clamp-2">{video.description}</p>
           </Link>
         ))}
       </section>
