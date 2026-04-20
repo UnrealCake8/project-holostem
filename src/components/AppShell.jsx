@@ -14,6 +14,13 @@ const menuItems = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+const mobileNavItems = [
+  { to: '/dashboard', label: 'Home', icon: '🏠' },
+  { to: '/upload', label: 'Upload', icon: '⬆️' },
+  { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
+  { to: '/profile', label: 'Profile', icon: '👤' },
+]
+
 function SuggestedAccounts() {
   const [accounts, setAccounts] = useState([])
   const [followingMap, setFollowingMap] = useState({})
@@ -65,11 +72,11 @@ function SuggestedAccounts() {
 
   return (
     <div className="mt-6 border-t border-black/10 pt-4 simple-mode-hidden">
-      <p className="mb-2 text-xl font-medium text-black/60">Suggested accounts</p>
+      <p className="mb-2 text-xl font-medium theme-muted">Suggested accounts</p>
       <ul className="space-y-3">
         {accounts.map((account) => (
           <li key={account.id}>
-            <div className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-black/5">
+            <div className="flex items-center gap-2 rounded-lg px-1 py-1 transition hover:bg-black/10">
               <Link
                 to={`/u/${account.username}`}
                 className="flex min-w-0 flex-1 items-center gap-3"
@@ -89,7 +96,7 @@ function SuggestedAccounts() {
                   <p className="truncate text-base font-semibold leading-tight">
                     {account.full_name || account.username}
                   </p>
-                  <p className="truncate text-sm text-black/45">@{account.username}</p>
+                  <p className="truncate text-sm theme-muted">@{account.username}</p>
                 </div>
               </Link>
               {user?.id && user.id !== account.id && (
@@ -97,7 +104,7 @@ function SuggestedAccounts() {
                   onClick={() => handleToggleFollow(account.id)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     followingMap[account.id]
-                      ? 'bg-black/10 text-black'
+                      ? 'bg-black/15 text-current'
                       : 'bg-pink-500 text-white'
                   }`}
                 >
@@ -116,34 +123,63 @@ export default function AppShell() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const currentSearchQuery = searchParams.get('q') ?? ''
+  const currentTab = searchParams.get('tab') || 'for-you'
+  const [searchText, setSearchText] = useState(currentSearchQuery)
+
+  useEffect(() => {
+    setSearchText(currentSearchQuery)
+  }, [currentSearchQuery])
 
   async function handleSignOut() {
     await signOut()
     navigate('/auth')
   }
 
+  function handleSearchSubmit(event) {
+    event.preventDefault()
+    const params = new URLSearchParams()
+    if (currentTab && currentTab !== 'for-you') {
+      params.set('tab', currentTab)
+    }
+    if (searchText.trim()) {
+      params.set('q', searchText.trim())
+    }
+    const query = params.toString()
+    navigate(`/dashboard${query ? `?${query}` : ''}`)
+  }
+
   return (
-    <div className="min-h-screen bg-[#f3f3f3] text-[#131313]">
+    <div className="theme-app-bg min-h-screen">
       <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[280px_1fr_120px]">
-        <aside className="border-r border-black/10 bg-white p-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto">
+        <aside className="theme-panel hidden border-r p-4 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-auto">
           <Link to="/dashboard" className="text-4xl font-black tracking-tight">
             HoloStem
           </Link>
-          <div className="mt-4 rounded-full bg-black/5 px-4 py-2 text-sm text-black/50">
-            🔍 Search
-          </div>
+          <form className="mt-4" onSubmit={handleSearchSubmit}>
+            <label className="sr-only" htmlFor="app-search">Search videos</label>
+            <input
+              id="app-search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              className="theme-input w-full rounded-full border px-4 py-2 text-sm"
+              placeholder="🔍 Search videos"
+              type="search"
+            />
+          </form>
           <nav className="mt-4 space-y-1">
             {menuItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) => {
-                  const activeByQuery =
-                    location.pathname === '/dashboard' &&
-                    location.search === item.to.replace('/dashboard', '')
+                  const itemSearch = item.to.split('?')[1] || ''
+                  const itemTab = new URLSearchParams(itemSearch).get('tab') || 'for-you'
+                  const activeByQuery = location.pathname === '/dashboard' && currentTab === itemTab
                   const active = isActive || activeByQuery
                   return `flex items-center gap-3 rounded-lg px-3 py-2 text-lg font-semibold transition ${
-                    active ? 'bg-pink-50 text-pink-600' : 'hover:bg-black/5'
+                    active ? 'bg-pink-500/15 text-pink-500' : 'hover:bg-black/10'
                   }`
                 }}
               >
@@ -156,14 +192,14 @@ export default function AppShell() {
           {user ? (
             <button
               onClick={handleSignOut}
-              className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5"
+              className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
             >
               Logout {user?.email ? `(${user.email})` : ''}
             </button>
           ) : (
             <NavLink
               to="/auth"
-              className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/5"
+              className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
             >
               Login / Sign up
             </NavLink>
@@ -172,10 +208,31 @@ export default function AppShell() {
           <SuggestedAccounts />
         </aside>
 
-        <main>
+        <main className="pb-20 lg:pb-0">
           <Outlet />
         </main>
       </div>
+
+      <nav className="theme-panel fixed inset-x-0 bottom-0 z-40 border-t px-2 py-2 lg:hidden">
+        <ul className="grid grid-cols-4 gap-1">
+          {mobileNavItems.map((item) => {
+            const active = location.pathname === item.to || (item.to.includes('?') && location.pathname === '/dashboard' && location.search.includes('tab=activity'))
+            return (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={`flex flex-col items-center justify-center rounded-xl px-1 py-2 text-xs font-medium ${
+                    active ? 'bg-pink-500/15 text-pink-500' : 'theme-muted'
+                  }`}
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </NavLink>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
     </div>
   )
 }

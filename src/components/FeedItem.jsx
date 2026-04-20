@@ -352,13 +352,18 @@ export default function FeedItem({ item, isActive, onDeleted }) {
 
   return (
     <>
-      <div className="relative h-full w-full bg-black overflow-hidden">
+      <div className="relative h-full w-full overflow-hidden bg-black">
         {/* Media */}
         <div
-          className="absolute inset-0 cursor-pointer"
+          className="absolute inset-0 flex cursor-pointer items-center justify-center"
           onClick={() => setIsPaused(!isPaused)}
         >
-          <FeedPlayer item={item} isActive={isActive} isPaused={isPaused} />
+          <div
+            className="relative h-full w-full max-w-[56.25vh] overflow-hidden bg-black"
+            style={{ aspectRatio: '9 / 16' }}
+          >
+            <FeedPlayer item={item} isActive={isActive} isPaused={isPaused} />
+          </div>
           {isPaused && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
               <div className="h-16 w-16 flex items-center justify-center rounded-full bg-black/40 text-white text-3xl">
@@ -378,9 +383,17 @@ export default function FeedItem({ item, isActive, onDeleted }) {
               to={`/u/${item.username}`}
               className="mb-1 inline-flex items-center gap-2 font-bold text-base hover:underline"
             >
-              <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/30">
-                {item.username[0].toUpperCase()}
-              </span>
+              {item?.avatar_url ? (
+                <img
+                  src={item.avatar_url}
+                  alt={`${item.username} avatar`}
+                  className="h-8 w-8 rounded-full border border-white/30 object-cover"
+                />
+              ) : (
+                <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/30">
+                  {item.username[0].toUpperCase()}
+                </span>
+              )}
               @{item.username}
             </Link>
           )}
@@ -410,9 +423,17 @@ export default function FeedItem({ item, isActive, onDeleted }) {
           {/* Creator avatar + follow */}
           <div className="relative">
             <Link to={item?.username ? `/u/${item.username}` : '#'}>
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-lg">
-                {(item?.username || '?')[0].toUpperCase()}
-              </div>
+              {item?.avatar_url ? (
+                <img
+                  src={item.avatar_url}
+                  alt={`${item?.username || 'creator'} avatar`}
+                  className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-lg"
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-lg">
+                  {(item?.username || '?')[0].toUpperCase()}
+                </div>
+              )}
             </Link>
             {!isOwner && (
               <button
