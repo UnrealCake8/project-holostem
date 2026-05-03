@@ -31,6 +31,20 @@ export default function SettingsPage() {
           <span>Dark mode</span>
           <input type="checkbox" checked={settings.darkMode} onChange={(e) => setSettings((s) => ({ ...s, darkMode: e.target.checked }))} />
         </label>
+        <label className="flex items-center justify-between rounded-lg bg-black/20 p-3">
+          <div>
+            <span className="block">Bionic Reading captions</span>
+            <span className="text-xs theme-muted">Bolds the start of words for better focus</span>
+          </div>
+          <input type="checkbox" checked={settings.bionicReading} onChange={(e) => setSettings((s) => ({ ...s, bionicReading: e.target.checked }))} />
+        </label>
+        <label className="flex items-center justify-between rounded-lg bg-black/20 p-3">
+          <div>
+            <span className="block">Muted by default</span>
+            <span className="text-xs theme-muted">Prevents sensory overload on page load</span>
+          </div>
+          <input type="checkbox" checked={settings.mutedByDefault} onChange={(e) => setSettings((s) => ({ ...s, mutedByDefault: e.target.checked }))} />
+        </label>
       </div>
 
       <div className="theme-card space-y-3 rounded-xl border p-4">

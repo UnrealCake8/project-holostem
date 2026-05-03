@@ -15,17 +15,52 @@ import {
   unfollowUser,
   fetchFollowerCount,
 } from '../lib/contentApi'
+import { readUiSettings } from '../lib/uiSettings'
+import { parseVTT, formatBionic } from '../lib/captionUtils'
 
 // ─── Video / Embed Player ─────────────────────────────────────────────────────
-function FeedPlayer({ item, isActive, isPaused }) {
+function FeedPlayer({ item, isActive, isPaused, settings }) {
   const videoRef = useRef(null)
+  const [cues, setCues] = useState([])
+  const [currentCaption, setCurrentCaption] = useState('')
+  const [isMuted, setIsMuted] = useState(settings.mutedByDefault)
   const mediaUrl = item?.media_url
+  const captionUrl = item?.captionUrl || item?.caption_url
 
   useEffect(() => {
     if (!videoRef.current) return
-    if (isActive && !isPaused) videoRef.current.play().catch(() => {})
-    else videoRef.current.pause()
+    if (isActive && !isPaused) {
+      videoRef.current.play().catch(() => {})
+    } else {
+      videoRef.current.pause()
+    }
   }, [isActive, isPaused])
+
+  useEffect(() => {
+    if (captionUrl) {
+      fetch(captionUrl)
+        .then(res => res.text())
+        .then(text => setCues(parseVTT(text)))
+        .catch(err => console.error('Failed to load captions:', err))
+    } else {
+      setCues([])
+    }
+  }, [captionUrl])
+
+  function handleTimeUpdate() {
+    if (!videoRef.current || cues.length === 0) return
+
+    const time = videoRef.current.currentTime
+    const activeCue = cues.find(c => time >= c.start && time <= c.end)
+    if (activeCue) {
+      const formatted = settings.bionicReading ? formatBionic(activeCue.text) : activeCue.text
+      if (formatted !== currentCaption) {
+        setCurrentCaption(formatted)
+      }
+    } else if (currentCaption !== '') {
+      setCurrentCaption('')
+    }
+  }
 
   if (!item) return null
 
@@ -49,29 +84,75 @@ function FeedPlayer({ item, isActive, isPaused }) {
       .replace('watch?v=', 'embed/')
       .replace('youtu.be/', 'youtube.com/embed/')
     const src = isActive && !isPaused
-      ? `${embedUrl}?autoplay=1&mute=0&controls=0&loop=1&playlist=${embedUrl.split('/').pop()}`
+      ? `${embedUrl}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&loop=1&playlist=${embedUrl.split('/').pop()}`
       : embedUrl
     return (
-      <iframe
-        key={isActive && !isPaused ? 'active' : 'inactive'}
-        title={item.title}
-        src={src}
-        className="h-full w-full pointer-events-none"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
+      <div className="relative h-full w-full">
+        <iframe
+          key={isActive && !isPaused ? 'active' : 'inactive'}
+          title={item.title}
+          src={src}
+          className="h-full w-full pointer-events-none"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+        {isMuted && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsMuted(false); }}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-lg z-10"
+          >
+            🔊 Enable Sound
+          </button>
+        )}
+      </div>
     )
   }
 
   if (mediaUrl) {
     return (
-      <video
-        ref={videoRef}
-        src={mediaUrl}
-        className="h-full w-full object-cover"
-        loop
-        playsInline
-      />
+      <div className="relative h-full w-full">
+        <video
+          ref={videoRef}
+          src={mediaUrl}
+          className="h-full w-full object-cover"
+          loop
+          playsInline
+          muted={isMuted}
+          crossOrigin="anonymous"
+          onTimeUpdate={handleTimeUpdate}
+        >
+          {captionUrl && (
+            <track
+              kind="captions"
+              src={captionUrl}
+              srcLang="en"
+              label="English"
+              default
+            />
+          )}
+        </video>
+
+        {/* Custom Caption Overlay */}
+        {currentCaption && (
+          <div className="absolute bottom-24 left-0 right-0 px-6 pointer-events-none z-20">
+            <div className="mx-auto max-w-xs text-center">
+              <span
+                className="inline-block bg-black/60 px-3 py-1.5 rounded-lg text-white text-base leading-snug shadow-xl backdrop-blur-sm border border-white/10"
+                dangerouslySetInnerHTML={{ __html: currentCaption }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isMuted && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsMuted(false); }}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-lg z-10"
+          >
+            🔊 Enable Sound/Captions
+          </button>
+        )}
+      </div>
     )
   }
 
@@ -265,6 +346,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
   const [isPaused, setIsPaused] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followersCount, setFollowersCount] = useState(0)
+  const [settings] = useState(readUiSettings())
 
   const isOwner = user && item?.user_id && user.id === item.user_id
 
@@ -362,10 +444,15 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             className="relative h-full w-full max-w-[56.25vh] overflow-hidden bg-black"
             style={{ aspectRatio: '9 / 16' }}
           >
-            <FeedPlayer item={item} isActive={isActive} isPaused={isPaused} />
+            <FeedPlayer
+              item={item}
+              isActive={isActive}
+              isPaused={isPaused}
+              settings={settings}
+            />
           </div>
           {isPaused && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-30">
               <div className="h-16 w-16 flex items-center justify-center rounded-full bg-black/40 text-white text-3xl">
                 ▶️
               </div>
@@ -377,49 +464,51 @@ export default function FeedItem({ item, isActive, onDeleted }) {
         <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
 
         {/* Bottom-left: creator info + caption */}
-        <div className="absolute bottom-0 left-0 right-16 p-4 pb-8 text-white">
-          {item?.username && (
-            <Link
-              to={`/u/${item.username}`}
-              className="mb-1 inline-flex items-center gap-2 font-bold text-base hover:underline"
-            >
-              {item?.avatar_url ? (
-                <img
-                  src={item.avatar_url}
-                  alt={`${item.username} avatar`}
-                  className="h-8 w-8 rounded-full border border-white/30 object-cover"
-                />
-              ) : (
-                <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/30">
-                  {item.username[0].toUpperCase()}
-                </span>
-              )}
-              @{item.username}
-            </Link>
-          )}
-          <p className="text-base font-semibold leading-snug drop-shadow-md line-clamp-2">
-            {item?.title}
-          </p>
-          {item?.description && (
-            <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug simple-mode-hidden">
-              {item.description}
+        <div className="absolute bottom-0 left-0 right-16 p-4 pb-8 text-white z-30 pointer-events-none">
+          <div className="pointer-events-auto">
+            {item?.username && (
+              <Link
+                to={`/u/${item.username}`}
+                className="mb-1 inline-flex items-center gap-2 font-bold text-base hover:underline"
+              >
+                {item?.avatar_url ? (
+                  <img
+                    src={item.avatar_url}
+                    alt={`${item.username} avatar`}
+                    className="h-8 w-8 rounded-full border border-white/30 object-cover"
+                  />
+                ) : (
+                  <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/30">
+                    {item.username[0].toUpperCase()}
+                  </span>
+                )}
+                @{item.username}
+              </Link>
+            )}
+            <p className="text-base font-semibold leading-snug drop-shadow-md line-clamp-2">
+              {item?.title}
             </p>
-          )}
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <span className="inline-block rounded-full bg-white/15 backdrop-blur px-2.5 py-0.5 text-xs capitalize">
-              {item?.type}
-            </span>
-            <Link
-              to={`/video/${item.id}`}
-              className="inline-block rounded-full bg-pink-500/80 backdrop-blur px-2.5 py-0.5 text-xs font-semibold hover:bg-pink-500"
-            >
-              View page ↗
-            </Link>
+            {item?.description && (
+              <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug simple-mode-hidden">
+                {item.description}
+              </p>
+            )}
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <span className="inline-block rounded-full bg-white/15 backdrop-blur px-2.5 py-0.5 text-xs capitalize">
+                {item?.type}
+              </span>
+              <Link
+                to={`/video/${item.id}`}
+                className="inline-block rounded-full bg-pink-500/80 backdrop-blur px-2.5 py-0.5 text-xs font-semibold hover:bg-pink-500"
+              >
+                View page ↗
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Right action rail */}
-        <div className="absolute right-2 bottom-8 flex flex-col items-center gap-5 pb-2">
+        <div className="absolute right-2 bottom-8 flex flex-col items-center gap-5 pb-2 z-30">
           {/* Creator avatar + follow */}
           <div className="relative">
             <Link to={item?.username ? `/u/${item.username}` : '#'}>

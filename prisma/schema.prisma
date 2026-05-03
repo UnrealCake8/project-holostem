@@ -28,6 +28,7 @@ model Video {
   userId      String
   caption     String
   videoUrl    String
+  captionUrl  String?
   thumbnail   String?
   visibility  String      @default("public")
   createdAt   DateTime    @default(now())
