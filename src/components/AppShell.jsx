@@ -127,6 +127,7 @@ export default function AppShell() {
   const currentSearchQuery = searchParams.get('q') ?? ''
   const currentTab = searchParams.get('tab') || 'for-you'
   const [searchText, setSearchText] = useState(currentSearchQuery)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     setSearchText(currentSearchQuery)
@@ -209,6 +210,47 @@ export default function AppShell() {
         </aside>
 
         <main className="pb-20 lg:pb-0">
+          <section className="theme-panel sticky top-0 z-30 border-b p-3 lg:hidden">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <Link to="/dashboard" className="text-2xl font-black tracking-tight">
+                HoloStem
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu-panel"
+                className="rounded-lg border border-black/10 px-3 py-2 text-sm font-semibold"
+              >
+                {mobileMenuOpen ? 'Close' : 'Menu'}
+              </button>
+            </div>
+            <form onSubmit={handleSearchSubmit}>
+              <label className="sr-only" htmlFor="app-search-mobile">Search videos</label>
+              <input
+                id="app-search-mobile"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                className="theme-input w-full rounded-full border px-4 py-2 text-sm"
+                placeholder="🔍 Search videos"
+                type="search"
+              />
+            </form>
+            {mobileMenuOpen && (
+              <div id="mobile-menu-panel" className="mt-3 grid grid-cols-2 gap-2">
+                {menuItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg border border-black/10 px-3 py-2 text-sm font-semibold"
+                  >
+                    {item.icon} {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </section>
           <Outlet />
         </main>
       </div>
