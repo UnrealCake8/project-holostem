@@ -74,7 +74,7 @@ export default function UploadPage() {
       <h1 className="text-3xl font-bold text-pink-600">Publish video link</h1>
       <p className="theme-muted">Share a direct .mp4 link to the HoloStem feed.</p>
       <p className="text-sm theme-muted">
-        Need help creating one?{' '}
+        Want us to do it for you?{' '}
         <a
           className="font-semibold text-pink-600 underline hover:text-pink-700"
           href="https://unrealcake8.github.io/project-holostem/uploader.html"
@@ -88,10 +88,18 @@ export default function UploadPage() {
         <h2 className="text-base font-semibold">What is an MP4 link and how can I generate it without using HoloStem MP4 Generator?</h2>
         <p className="mt-2 text-sm theme-muted">
           An MP4 link is a direct URL that points straight to a video file ending in <code>.mp4</code>. You can generate one by uploading your video to
-          a cloud storage service (for example Supabase Storage, Cloudinary, Amazon S3, or Google Cloud Storage), then copying the public file URL for
-          that uploaded video. Make sure the file is publicly accessible and the URL opens or downloads the MP4 directly.
+          a cloud storage service (Google Drive, OneDrive, etc.), then copying the public file URL for
+          that uploaded video. Make sure the file is publicly accessible and the URL opens or downloads the MP4 directly. For Google Drive, just use Google Drive Direct Link Generator.
         </p>
       </div>
+
+      <div className="theme-card rounded-2xl border p-4">
+        <h2 className="text-base font-semibold">Why does HoloStem ask people to use MP4 links?</h2>
+        <p className="mt-2 text-sm theme-muted">
+          HoloStem asks people to use direct MP4 links because we don't have a proper server to handle a lot of videos. Using your own MP4 Link allows you to have full control of your video, so that no one steals your video and reposts it on TikTok, YouTube, etc.
+        </p>
+      </div>
+      
       <p className="text-sm theme-muted">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="theme-card grid gap-3 rounded-2xl border p-4" onSubmit={handleSubmit}>
