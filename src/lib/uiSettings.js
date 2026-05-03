@@ -2,17 +2,33 @@ const SETTINGS_KEY = 'holostem_ui_settings'
 
 export function readUiSettings() {
   if (typeof window === 'undefined') {
-    return { largeText: false, simpleMode: false, darkMode: true }
-  }
-
-  try {
-    return JSON.parse(window.localStorage.getItem(SETTINGS_KEY)) ?? {
+    return {
       largeText: false,
       simpleMode: false,
       darkMode: true,
+      bionicReading: false,
+      mutedByDefault: true,
     }
+  }
+
+  try {
+    const defaults = {
+      largeText: false,
+      simpleMode: false,
+      darkMode: true,
+      bionicReading: false,
+      mutedByDefault: true,
+    }
+    const stored = JSON.parse(window.localStorage.getItem(SETTINGS_KEY))
+    return { ...defaults, ...stored }
   } catch {
-    return { largeText: false, simpleMode: false, darkMode: true }
+    return {
+      largeText: false,
+      simpleMode: false,
+      darkMode: true,
+      bionicReading: false,
+      mutedByDefault: true,
+    }
   }
 }
 

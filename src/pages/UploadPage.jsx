@@ -22,6 +22,7 @@ export default function UploadPage() {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     const mediaUrl = String(formData.get('media_url') || '').trim()
+    const captionUrl = String(formData.get('caption_url') || '').trim()
     const title = String(formData.get('title') || '').trim()
     const description = String(formData.get('description') || '').trim()
     const category = String(formData.get('category') || 'General').trim()
@@ -34,6 +35,11 @@ export default function UploadPage() {
 
     if (!mediaUrl.toLowerCase().endsWith('.mp4')) {
       setStatus('Only direct .mp4 links are supported.')
+      return
+    }
+
+    if (captionUrl && !captionUrl.toLowerCase().endsWith('.vtt')) {
+      setStatus('Only .vtt caption files are supported.')
       return
     }
 
@@ -52,6 +58,7 @@ export default function UploadPage() {
         username,
         type: 'video',
         media_url: mediaUrl,
+        caption_url: captionUrl || null,
         category,
         points,
         recommended: false,
@@ -115,6 +122,12 @@ export default function UploadPage() {
           placeholder="Direct MP4 URL (e.g. https://example.com/video.mp4)"
           type="url"
           required
+        />
+        <input
+          className="theme-input rounded-xl border px-3 py-2"
+          name="caption_url"
+          placeholder="Optional .vtt caption URL"
+          type="url"
         />
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={submitting}>
           {submitting ? 'Publishing...' : 'Add video link'}

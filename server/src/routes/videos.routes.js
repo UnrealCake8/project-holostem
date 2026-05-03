@@ -9,6 +9,7 @@ const uploadPayloadSchema = z.object({
   caption: z.string().trim().min(1, 'Caption is required').max(280),
   visibility: z.enum(['public', 'friends', 'private']).default('public'),
   videoUrl: z.url('A valid cloud video URL is required'),
+  captionUrl: z.string().url('A valid caption URL is required').optional().or(z.literal('')),
   thumbnail: z.url('A valid cloud thumbnail URL is required').optional(),
 })
 
@@ -41,7 +42,7 @@ router.post('/upload', requireAuth, async (req, res) => {
     })
   }
 
-  const { caption, visibility, videoUrl, thumbnail } = parsed.data
+  const { caption, visibility, videoUrl, captionUrl, thumbnail } = parsed.data
 
   const video = await prisma.video.create({
     data: {
@@ -49,6 +50,7 @@ router.post('/upload', requireAuth, async (req, res) => {
       caption,
       visibility,
       videoUrl,
+      captionUrl: captionUrl || null,
       thumbnail,
     },
     include: {
