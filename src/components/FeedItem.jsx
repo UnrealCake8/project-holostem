@@ -425,9 +425,9 @@ export default function FeedItem({ item, isActive, onDeleted }) {
   }
 
 
-  async function handleReport(targetType, targetId, targetUserId = null, reason = 'spam', details = '') {
+  async function handleReport(targetType, targetId, targetUserId = null, reason = 'spam', details = '', targetUserEmail = null) {
     if (!user) { navigate('/auth'); return }
-    await createReport({ target_type: targetType, target_id: targetId, target_user_id: targetUserId, reporter_id: user.id, reason, details: details || null })
+    await createReport({ target_type: targetType, target_id: targetId, target_user_id: targetUserId, reporter_id: user.id, reporter_email: user.email || null, target_user_email: targetUserEmail, reason, details: details || null })
     alert('Report submitted')
   }
 
@@ -594,7 +594,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
           </button>
 
-          <button onClick={() => handleReport('content', item.id, item.user_id, 'spam', '')} className="flex flex-col items-center gap-1" aria-label="Report"><span className="text-2xl">🚩</span><span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Report</span></button>
+          <button onClick={() => handleReport('content', item.id, item.user_id, 'spam', '', item.user_email || null)} className="flex flex-col items-center gap-1" aria-label="Report"><span className="text-2xl">🚩</span><span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Report</span></button>
 
           {/* Delete (owner only) */}
           {isOwner && (

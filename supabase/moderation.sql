@@ -12,6 +12,7 @@ exception when duplicate_object then null; end $$;
 
 -- Ensure role column exists for moderator/admin checks
 alter table public.profiles add column if not exists role text default 'user';
+alter table public.profiles add column if not exists email text;
 alter table public.profiles add constraint profiles_role_check check (role in ('user','moderator','admin')) not valid;
 alter table public.profiles validate constraint profiles_role_check;
 alter table public.contents add column if not exists status moderation_status;
@@ -35,6 +36,8 @@ create table if not exists public.reports (
   target_type text not null check (target_type in ('content','comment')),
   target_id uuid not null,
   target_user_id uuid references auth.users(id) on delete set null,
+  reporter_email text,
+  target_user_email text,
   reason text not null check (reason in ('harassment','hate','sexual content','violence','spam','misinformation','copyright','other')),
   details text,
   status text not null default 'open' check (status in ('open','resolved','dismissed')),
