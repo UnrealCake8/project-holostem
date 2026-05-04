@@ -120,17 +120,7 @@ function FeedPlayer({ item, isActive, isPaused, settings }) {
           muted={isMuted}
           crossOrigin="anonymous"
           onTimeUpdate={handleTimeUpdate}
-        >
-          {captionUrl && (
-            <track
-              kind="captions"
-              src={captionUrl}
-              srcLang="en"
-              label="English"
-              default
-            />
-          )}
-        </video>
+        />
 
         {/* Custom Caption Overlay */}
         {currentCaption && (
