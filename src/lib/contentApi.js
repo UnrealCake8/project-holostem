@@ -462,3 +462,43 @@ export const fetchProfilesByIds = async (userIds = []) => {
   if (error) throw error
   return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }
+
+export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
+  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
+  if (error) throw error
+}
+
+
+export async function fetchProfilesByIds(userIds = []) {
+  const ids = [...new Set((userIds || []).filter(Boolean))]
+  if (!ids.length) return {}
+  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
+  if (error) throw error
+  return Object.fromEntries((data || []).map((row) => [row.id, row]))
+}
+
+export async function updateContentModeration(contentId, updates) {
+  const { data, error } = await supabase.from('contents').update(updates).eq('id', contentId).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function fetchReports(filters = {}) {
+  let query = supabase.from('reports').select('*').order('created_at', { ascending: false })
+  if (filters.status) query = query.eq('status', filters.status)
+  if (filters.target_type) query = query.eq('target_type', filters.target_type)
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
+export async function updateReportStatus(reportId, status) {
+  const { error } = await supabase.from('reports').update({ status }).eq('id', reportId)
+  if (error) throw error
+}
+
+export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
+  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
+  if (error) throw error
+}
+
