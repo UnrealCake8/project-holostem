@@ -11,6 +11,7 @@ import PublicProfilePage from './pages/PublicProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import UploadPage from './pages/UploadPage'
 import VideoPage from './pages/VideoPage'
+import ModeratorDashboardPage from './pages/ModeratorDashboardPage'
 
 export default function App() {
   useEffect(() => {
@@ -39,6 +40,14 @@ export default function App() {
           element={(
             <RequireAuth>
               <SettingsPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="moderation"
+          element={(
+            <RequireAuth>
+              <ModeratorDashboardPage />
             </RequireAuth>
           )}
         />
