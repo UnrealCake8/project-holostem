@@ -594,8 +594,6 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
           </button>
 
-          <button onClick={() => handleReport('content', item.id, item.user_id, 'spam', '', item.user_email || null)} className="flex flex-col items-center gap-1" aria-label="Report"><span className="text-2xl">🚩</span><span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Report</span></button>
-
           {/* Delete (owner only) */}
           {isOwner && (
             <button

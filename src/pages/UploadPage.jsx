@@ -7,7 +7,6 @@ export default function UploadPage() {
   const [status, setStatus] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [username, setUsername] = useState(user?.user_metadata?.username || '')
-  const [moderationMethod, setModerationMethod] = useState('ai')
 
   useEffect(() => {
     if (user?.id) {
@@ -45,7 +44,7 @@ export default function UploadPage() {
     }
 
     setSubmitting(true)
-    setStatus('Submitting for moderation...')
+    setStatus('Publishing your video...')
 
     try {
       if (!username) {
@@ -64,13 +63,10 @@ export default function UploadPage() {
         points,
         recommended: false,
         is_trending: false,
-        moderation_method: moderationMethod,
       })
 
       event.currentTarget.reset()
-      if (created.status === 'pending_review') setStatus('Your post has been sent to a human moderator. Review usually takes 5–6 hours.')
-      else if (created.status === 'needs_review') setStatus('Submitted. Your post needs additional review before publishing.')
-      else setStatus('Video link published! It is now live in the feed.')
+      setStatus('Video link published! It is now live in the feed.')
     } catch (err) {
       const message = err instanceof Error ? err.message : "Your video should be published. This fallback message is only shown when the app cannot read the real error yet.";
       console.error('Publish failed:', err)
@@ -133,11 +129,6 @@ export default function UploadPage() {
           placeholder="Optional .vtt caption URL"
           type="url"
         />
-        <div className="rounded-xl border p-3 text-sm">
-          <p className="font-semibold">Moderation type</p>
-          <label className="mt-2 flex items-start gap-2"><input type="radio" checked={moderationMethod==='ai'} onChange={() => setModerationMethod('ai')} /> <span><strong>AI Moderation — Instant</strong><br/>Fast automated review. Some posts may still be sent to a human moderator.</span></label>
-          <label className="mt-2 flex items-start gap-2"><input type="radio" checked={moderationMethod==='human'} onChange={() => setModerationMethod('human')} /> <span><strong>Human Moderator — estimated 5–6 hours</strong><br/>Slower manual review. Usually reviewed within 5–6 hours.</span></label>
-        </div>
         <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={submitting}>
           {submitting ? 'Publishing...' : 'Add video link'}
         </button>

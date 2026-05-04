@@ -7,6 +7,6 @@ export const appConfig = {
     enablePremium: true,
     enableVoiceCall: true,
     enableVideoCall: true,
-    enableModeration: true,
+    enableModeration: false,
   },
 }
