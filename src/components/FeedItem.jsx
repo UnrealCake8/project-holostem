@@ -10,6 +10,7 @@ import {
   addComment,
   deleteComment,
   deleteContent,
+  createReport,
   fetchFollowStatus,
   followUser,
   unfollowUser,
@@ -156,12 +157,15 @@ function FeedPlayer({ item, isActive, isPaused, settings }) {
 }
 
 // ─── Comments Drawer ──────────────────────────────────────────────────────────
-function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted }) {
+function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted, onReportComment }) {
   const { user } = useAuth()
   const [comments, setComments] = useState([])
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(true)
   const [posting, setPosting] = useState(false)
+  const [reportingComment, setReportingComment] = useState(null)
+  const [reportReason, setReportReason] = useState('spam')
+  const [reportDetails, setReportDetails] = useState('')
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -242,6 +246,7 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted }) {
                   {new Date(c.created_at).toLocaleDateString()}
                 </p>
               </div>
+              <button onClick={() => setReportingComment(c)} className="text-white/30 hover:text-yellow-400 text-xs flex-shrink-0 mt-1">Report</button>
               {user?.id === c.user_id && (
                 <button
                   onClick={() => handleDeleteComment(c.id)}
@@ -282,6 +287,21 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted }) {
             </p>
           )}
         </form>
+      {reportingComment && (
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4" onClick={() => setReportingComment(null)}>
+          <div className="w-full max-w-sm rounded-xl bg-[#111] border border-white/20 p-4" onClick={(e) => e.stopPropagation()}>
+            <p className="font-semibold text-white">Report comment by @{reportingComment.user_handle}</p>
+            <select value={reportReason} onChange={(e)=>setReportReason(e.target.value)} className="mt-3 w-full rounded bg-white/10 px-2 py-2 text-sm text-white">
+              <option value="harassment">harassment</option><option value="hate">hate</option><option value="sexual content">sexual content</option><option value="violence">violence</option><option value="spam">spam</option><option value="misinformation">misinformation</option><option value="copyright">copyright</option><option value="other">other</option>
+            </select>
+            <textarea value={reportDetails} onChange={(e)=>setReportDetails(e.target.value)} placeholder="Optional details" className="mt-2 w-full rounded bg-white/10 px-2 py-2 text-sm text-white"/>
+            <div className="mt-3 flex gap-2">
+              <button className="flex-1 rounded border border-white/30 py-2 text-sm" onClick={() => setReportingComment(null)}>Cancel</button>
+              <button className="flex-1 rounded bg-pink-600 py-2 text-sm font-semibold" onClick={async () => { await onReportComment?.(reportingComment.id, reportingComment.user_id, reportReason, reportDetails); setReportingComment(null); setReportDetails('') }}>Submit report</button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )
@@ -402,6 +422,13 @@ export default function FeedItem({ item, isActive, onDeleted }) {
     } else {
       navigator.clipboard.writeText(url)
     }
+  }
+
+
+  async function handleReport(targetType, targetId, targetUserId = null, reason = 'spam', details = '', targetUserEmail = null) {
+    if (!user) { navigate('/auth'); return }
+    await createReport({ target_type: targetType, target_id: targetId, target_user_id: targetUserId, reporter_id: user.id, reporter_email: user.email || null, target_user_email: targetUserEmail, reason, details: details || null })
+    alert('Report submitted')
   }
 
   async function handleFollowToggle() {
@@ -567,6 +594,8 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
           </button>
 
+          <button onClick={() => handleReport('content', item.id, item.user_id, 'spam', '', item.user_email || null)} className="flex flex-col items-center gap-1" aria-label="Report"><span className="text-2xl">🚩</span><span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Report</span></button>
+
           {/* Delete (owner only) */}
           {isOwner && (
             <button
@@ -588,6 +617,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
           onClose={() => setShowComments(false)}
           onCommentAdded={() => setCommentCount((prev) => prev + 1)}
           onCommentDeleted={() => setCommentCount((prev) => Math.max(0, prev - 1))}
+          onReportComment={(commentId, targetUserId, reason, details) => handleReport('comment', commentId, targetUserId, reason, details)}
         />
       )}
 
