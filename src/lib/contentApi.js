@@ -1,6 +1,5 @@
 import { fallbackContent } from '../data/fallbackContent'
 import { hasSupabaseConfig, supabase } from './supabase'
-import { evaluateModerationText } from './moderationRules'
 
 // ─── Content ──────────────────────────────────────────────────────────────────
 
@@ -112,14 +111,11 @@ export async function fetchComments(contentId) {
   }))
 }
 
-export async function addComment({ userId, contentId, username, body, moderationMethod = 'ai' }) {
+export async function addComment({ userId, contentId, username, body }) {
   if (!hasSupabaseConfig || !userId) throw new Error('Not authenticated')
-  const moderation = evaluateModerationText(body)
-  const status = moderationMethod === 'human' ? 'pending_review' : moderation.safe ? 'published' : 'needs_review'
-  const method = moderationMethod === 'human' ? 'human' : moderation.safe ? 'ai' : 'ai_escalated'
   const { data, error } = await supabase
     .from('comments')
-    .insert({ user_id: userId, content_id: contentId, user_handle: username, body, status, moderation_method: method, moderation_reason: moderation.reason, moderation_requested_at: moderationMethod === 'human' ? new Date().toISOString() : null })
+    .insert({ user_id: userId, content_id: contentId, user_handle: username, body, status: 'published', moderation_method: null, moderation_reason: null, moderation_requested_at: null })
     .select()
     .single()
   if (error) throw error
@@ -398,16 +394,12 @@ export async function fetchFollowNotifications(userId) {
 
 export async function createContent(payload) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
-  const moderationChoice = payload.moderation_method === 'human' ? 'human' : 'ai'
-  const moderation = evaluateModerationText(`${payload.title || ''} ${payload.description || ''}`)
-  const status = moderationChoice === 'human' ? 'pending_review' : moderation.safe ? 'published' : 'needs_review'
-  const moderationMethod = moderationChoice === 'human' ? 'human' : moderation.safe ? 'ai' : 'ai_escalated'
   const insertPayload = {
     ...payload,
-    status,
-    moderation_method: moderationMethod,
-    moderation_reason: moderation.reason,
-    moderation_requested_at: moderationChoice === 'human' ? new Date().toISOString() : null,
+    status: 'published',
+    moderation_method: null,
+    moderation_reason: null,
+    moderation_requested_at: null,
   }
   const { data, error } = await supabase.from('contents').insert(insertPayload).select().single()
   if (error) throw error
@@ -428,53 +420,6 @@ export async function fetchModeratorQueue(filters = {}) {
   const { data, error } = await query
   if (error) throw error
   return data ?? []
-}
-
-export const updateContentModeration = async (contentId, updates) => {
-  const { data, error } = await supabase.from('contents').update(updates).eq('id', contentId).select().single()
-  if (error) throw error
-  return data
-}
-
-export async function fetchReports(filters = {}) {
-  let query = supabase.from('reports').select('*').order('created_at', { ascending: false })
-  if (filters.status) query = query.eq('status', filters.status)
-  if (filters.target_type) query = query.eq('target_type', filters.target_type)
-  const { data, error } = await query
-  if (error) throw error
-  return data ?? []
-}
-
-export async function updateReportStatus(reportId, status) {
-  const { error } = await supabase.from('reports').update({ status }).eq('id', reportId)
-  if (error) throw error
-}
-
-export const addUserStrike = async ({ user_id, strike_count = 1, notes = '' }) => {
-  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
-  if (error) throw error
-}
-
-export const fetchProfilesByIds = async (userIds = []) => {
-  const ids = [...new Set((userIds || []).filter(Boolean))]
-  if (!ids.length) return {}
-  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
-  if (error) throw error
-  return Object.fromEntries((data || []).map((row) => [row.id, row]))
-}
-
-export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
-  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
-  if (error) throw error
-}
-
-
-export async function fetchProfilesByIds(userIds = []) {
-  const ids = [...new Set((userIds || []).filter(Boolean))]
-  if (!ids.length) return {}
-  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
-  if (error) throw error
-  return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }
 
 export async function updateContentModeration(contentId, updates) {
@@ -502,3 +447,10 @@ export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
   if (error) throw error
 }
 
+export async function fetchProfilesByIds(userIds = []) {
+  const ids = [...new Set((userIds || []).filter(Boolean))]
+  if (!ids.length) return {}
+  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
+  if (error) throw error
+  return Object.fromEntries((data || []).map((row) => [row.id, row]))
+}
