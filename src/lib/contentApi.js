@@ -1,5 +1,6 @@
 import { fallbackContent } from '../data/fallbackContent'
 import { hasSupabaseConfig, supabase } from './supabase'
+import { evaluateModerationText } from './moderationRules'
 
 // ─── Content ──────────────────────────────────────────────────────────────────
 
@@ -9,6 +10,7 @@ export async function fetchContent({ search = '', category = 'all' } = {}) {
   let query = supabase
     .from('contents')
     .select('*')
+    .or('status.eq.published,status.is.null')
     .order('created_at', { ascending: false })
 
   if (category !== 'all') query = query.eq('type', category)
@@ -101,6 +103,7 @@ export async function fetchComments(contentId) {
     .from('comments')
     .select('*')
     .eq('content_id', contentId)
+    .or('status.eq.published,status.is.null')
     .order('created_at', { ascending: true })
   if (error) throw error
   return (data ?? []).map((row) => ({
@@ -109,11 +112,14 @@ export async function fetchComments(contentId) {
   }))
 }
 
-export async function addComment({ userId, contentId, username, body }) {
+export async function addComment({ userId, contentId, username, body, moderationMethod = 'ai' }) {
   if (!hasSupabaseConfig || !userId) throw new Error('Not authenticated')
+  const moderation = evaluateModerationText(body)
+  const status = moderationMethod === 'human' ? 'pending_review' : moderation.safe ? 'published' : 'needs_review'
+  const method = moderationMethod === 'human' ? 'human' : moderation.safe ? 'ai' : 'ai_escalated'
   const { data, error } = await supabase
     .from('comments')
-    .insert({ user_id: userId, content_id: contentId, user_handle: username, body })
+    .insert({ user_id: userId, content_id: contentId, user_handle: username, body, status, moderation_method: method, moderation_reason: moderation.reason, moderation_requested_at: moderationMethod === 'human' ? new Date().toISOString() : null })
     .select()
     .single()
   if (error) throw error
@@ -392,6 +398,68 @@ export async function fetchFollowNotifications(userId) {
 
 export async function createContent(payload) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
-  const { error } = await supabase.from('contents').insert(payload)
+  const moderationChoice = payload.moderation_method === 'human' ? 'human' : 'ai'
+  const moderation = evaluateModerationText(`${payload.title || ''} ${payload.description || ''}`)
+  const status = moderationChoice === 'human' ? 'pending_review' : moderation.safe ? 'published' : 'needs_review'
+  const moderationMethod = moderationChoice === 'human' ? 'human' : moderation.safe ? 'ai' : 'ai_escalated'
+  const insertPayload = {
+    ...payload,
+    status,
+    moderation_method: moderationMethod,
+    moderation_reason: moderation.reason,
+    moderation_requested_at: moderationChoice === 'human' ? new Date().toISOString() : null,
+  }
+  const { data, error } = await supabase.from('contents').insert(insertPayload).select().single()
   if (error) throw error
+  return data
+}
+
+export async function createReport(payload) {
+  const { data, error } = await supabase.from('reports').insert(payload).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function fetchModeratorQueue(filters = {}) {
+  const { status, moderation_method } = filters
+  let query = supabase.from('contents').select('*').order('created_at', { ascending: false })
+  if (status) query = query.eq('status', status)
+  if (moderation_method) query = query.eq('moderation_method', moderation_method)
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
+export const updateContentModeration = async (contentId, updates) => {
+  const { data, error } = await supabase.from('contents').update(updates).eq('id', contentId).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function fetchReports(filters = {}) {
+  let query = supabase.from('reports').select('*').order('created_at', { ascending: false })
+  if (filters.status) query = query.eq('status', filters.status)
+  if (filters.target_type) query = query.eq('target_type', filters.target_type)
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
+export async function updateReportStatus(reportId, status) {
+  const { error } = await supabase.from('reports').update({ status }).eq('id', reportId)
+  if (error) throw error
+}
+
+export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
+  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
+  if (error) throw error
+}
+
+
+export async function fetchProfilesByIds(userIds = []) {
+  const ids = [...new Set((userIds || []).filter(Boolean))]
+  if (!ids.length) return {}
+  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
+  if (error) throw error
+  return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }

@@ -51,6 +51,7 @@ export default function AuthProvider({ children }) {
         id: data.user.id,
         display_name: fullName,
         username: normalizedUsername,
+        email,
       })
 
       if (profileError) throw profileError
