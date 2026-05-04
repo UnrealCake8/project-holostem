@@ -430,7 +430,7 @@ export async function fetchModeratorQueue(filters = {}) {
   return data ?? []
 }
 
-export async function updateContentModeration(contentId, updates) {
+export const updateContentModeration = async (contentId, updates) => {
   const { data, error } = await supabase.from('contents').update(updates).eq('id', contentId).select().single()
   if (error) throw error
   return data
@@ -448,6 +448,19 @@ export async function fetchReports(filters = {}) {
 export async function updateReportStatus(reportId, status) {
   const { error } = await supabase.from('reports').update({ status }).eq('id', reportId)
   if (error) throw error
+}
+
+export const addUserStrike = async ({ user_id, strike_count = 1, notes = '' }) => {
+  const { error } = await supabase.rpc('add_user_strike', { p_user_id: user_id, p_increment: strike_count, p_notes: notes })
+  if (error) throw error
+}
+
+export const fetchProfilesByIds = async (userIds = []) => {
+  const ids = [...new Set((userIds || []).filter(Boolean))]
+  if (!ids.length) return {}
+  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
+  if (error) throw error
+  return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }
 
 export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
