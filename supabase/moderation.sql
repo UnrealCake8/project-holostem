@@ -9,6 +9,11 @@ do $$ begin
   create type moderation_method as enum ('ai','human','ai_escalated');
 exception when duplicate_object then null; end $$;
 
+
+-- Ensure role column exists for moderator/admin checks
+alter table public.profiles add column if not exists role text default 'user';
+alter table public.profiles add constraint profiles_role_check check (role in ('user','moderator','admin')) not valid;
+alter table public.profiles validate constraint profiles_role_check;
 alter table public.contents add column if not exists status moderation_status;
 alter table public.contents add column if not exists moderation_method moderation_method;
 alter table public.contents add column if not exists moderation_reason text;
