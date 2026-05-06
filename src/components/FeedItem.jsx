@@ -533,7 +533,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                 <img
                   src={item.avatar_url}
                   alt={`${item?.username || 'creator'} avatar`}
-                  className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-lg"
+                  className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-lg lg:h-12 lg:w-12"
                 />
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-pink-400 to-purple-600 text-base font-bold text-white shadow-lg">
