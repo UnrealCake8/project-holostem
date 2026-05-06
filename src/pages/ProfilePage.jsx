@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
   return (
     <div className="theme-app-bg space-y-4 p-4 lg:p-4">
-      <section className="-mx-4 -mt-4 bg-[#121212] px-4 pb-0 pt-20 text-white lg:hidden">
+      <section className="-mx-4 -mt-4 min-h-screen bg-[#121212] px-4 pb-28 pt-20 text-white lg:hidden">
         <div className="flex flex-col items-center text-center">
           <div className="relative h-20 w-20 rounded-full border border-white/20 bg-[#151a17]">
             <ProfileAvatar profile={profile} />

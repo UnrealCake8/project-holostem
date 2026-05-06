@@ -6,7 +6,6 @@ import {
   fetchFollowingIds,
   fetchFollowNotifications,
   fetchProfileAvatarsByUserIds,
-  fetchSuggestedProfiles,
 } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
@@ -134,7 +133,6 @@ export default function DashboardPage() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [notifications, setNotifications] = useState([])
   const [followingProfiles, setFollowingProfiles] = useState([])
-  const [suggestedProfiles, setSuggestedProfiles] = useState([])
   const [loadError, setLoadError] = useState('')
   const [usageSettings, setUsageSettings] = useState(readUsageSettings)
   const [usageState, setUsageState] = useState(() => readUsageState(getDayString()))
@@ -142,7 +140,9 @@ export default function DashboardPage() {
   const [touchStart, setTouchStart] = useState(null)
   const containerRef = useRef(null)
   const tab = new URLSearchParams(location.search).get('tab') || 'for-you'
-  const searchQuery = new URLSearchParams(location.search).get('q') || ''
+  const searchParams = new URLSearchParams(location.search)
+  const searchQuery = searchParams.get('q') || ''
+  const activityView = searchParams.get('view') || 'inbox'
   const dayKey = getDayString()
 
   const usageRatio = useMemo(() => {
@@ -154,10 +154,9 @@ export default function DashboardPage() {
     let cancelled = false
 
     async function hydrateActivity() {
-      const [followNotifications, followingData, suggestedData] = await Promise.all([
+      const [followNotifications, followingData] = await Promise.all([
         user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
         user?.id ? fetchFollowingForUser(user.id) : Promise.resolve([]),
-        fetchSuggestedProfiles({ excludeUserId: user?.id || '', limit: 6 }),
       ])
 
       if (cancelled) return
@@ -167,7 +166,6 @@ export default function DashboardPage() {
         id: entry.following_id,
         ...(entry.profiles || {}),
       })))
-      setSuggestedProfiles(suggestedData)
     }
 
     async function hydrateFeed() {
@@ -348,7 +346,6 @@ export default function DashboardPage() {
       {
         id: 'followers',
         icon: '♟',
-        tone: 'bg-sky-500',
         title: 'New followers',
         body: notifications[0]?.profiles?.username
           ? `${notifications[0].profiles.username} started following you.`
@@ -357,20 +354,13 @@ export default function DashboardPage() {
       {
         id: 'activity',
         icon: '♥',
-        tone: 'bg-rose-500',
         title: 'Activity',
-        body: notifications.length > 1
-          ? `${notifications.length} recent follow notifications.`
-          : 'Likes, comments, replies, and mentions will appear here.',
-      },
-      {
-        id: 'system',
-        icon: '▰',
-        tone: 'bg-zinc-800',
-        title: 'System notifications',
-        body: 'Screen time and app updates will appear here.',
+        body: notifications.length
+          ? `${notifications.length} recent follow ${notifications.length === 1 ? 'notification' : 'notifications'}.`
+          : 'Follower activity will appear here.',
       },
     ]
+    const visibleNotifications = activityView === 'activity' || activityView === 'followers' ? notifications : []
 
     return (
       <div className="theme-app-bg mx-auto max-w-2xl p-4 pt-20 lg:p-4">
@@ -425,43 +415,46 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="space-y-5 px-4">
+          <div className="space-y-4 px-4">
             {activityRows.map((row) => (
-              <div key={row.id} className="flex items-center gap-3">
-                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.tone} text-2xl`}>{row.icon}</div>
+              <Link
+                key={row.id}
+                to={`/dashboard?tab=activity&view=${row.id}`}
+                className={`flex items-center gap-3 rounded-2xl p-2 transition ${activityView === row.id ? 'bg-white/10' : 'hover:bg-white/5'}`}
+              >
+                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.id === 'followers' ? 'bg-sky-500' : 'bg-rose-500'} text-2xl`}>{row.icon}</div>
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-medium">{row.title}</p>
                   <p className="truncate text-base text-white/55">{row.body}</p>
                 </div>
-              </div>
+                <span className="text-xl text-white/35">›</span>
+              </Link>
             ))}
           </div>
 
-          <div className="mt-6 bg-[#171717] px-4 py-5">
-            <h2 className="mb-4 text-xl font-black">Suggested accounts <span className="text-sm">ⓘ</span></h2>
-            {suggestedProfiles.length === 0 ? (
-              <p className="text-sm text-white/45">No account suggestions are available right now.</p>
-            ) : (
-              <div className="space-y-5">
-                {suggestedProfiles.map((account) => (
-                  <div key={account.id || account.username} className="flex items-center gap-3">
-                    <Link to={`/u/${account.username}`} className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-zinc-800 text-xl font-black">
-                      {account.avatar_url ? (
-                        <img src={account.avatar_url} alt={account.username || 'profile'} className="h-full w-full rounded-full object-cover" />
-                      ) : (
-                        <span>{(account.display_name || account.full_name || account.username || '?')[0].toUpperCase()}</span>
-                      )}
-                    </Link>
-                    <Link to={`/u/${account.username}`} className="min-w-0 flex-1">
-                      <p className="truncate text-base font-bold">{account.display_name || account.full_name || account.username}</p>
-                      <p className="truncate text-sm text-white/55">@{account.username}</p>
-                    </Link>
-                    <Link to={`/u/${account.username}`} className="rounded-full bg-rose-500 px-5 py-2 text-sm font-bold">View</Link>
+          {visibleNotifications.length > 0 && (
+            <div className="mx-4 mt-5 space-y-3 rounded-2xl bg-white/5 p-3">
+              {visibleNotifications.map((notification) => (
+                <Link
+                  key={`${notification.follower_id}-${notification.created_at}`}
+                  to={notification.profiles?.username ? `/u/${notification.profiles.username}` : '/dashboard?tab=activity'}
+                  className="flex items-center gap-3 rounded-xl p-2 hover:bg-white/5"
+                >
+                  {notification.profiles?.avatar_url ? (
+                    <img src={notification.profiles.avatar_url} alt={notification.profiles?.username || 'profile'} className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-zinc-800 text-sm font-bold">
+                      {(notification.profiles?.display_name || notification.profiles?.username || '?')[0].toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">@{notification.profiles?.username || 'user'} started following you.</p>
+                    <p className="text-xs text-white/45">{new Date(notification.created_at).toLocaleString()}</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     )

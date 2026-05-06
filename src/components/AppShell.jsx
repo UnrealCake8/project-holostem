@@ -16,7 +16,7 @@ const menuItems = [
 
 const mobileNavItems = [
   { to: '/dashboard', label: 'Home', icon: '⌂' },
-  { to: '/dashboard?tab=following', label: 'Friends', icon: '♟' },
+  { to: '/dashboard?tab=following', label: 'Following', icon: '♟' },
   { to: '/upload', label: 'Create', icon: '+' },
   { to: '/dashboard?tab=activity', label: 'Inbox', icon: '▭' },
   { to: '/profile', label: 'Profile', icon: '♙' },
@@ -32,7 +32,7 @@ function SuggestedAccounts() {
       // Fetch up to 5 real profiles — exclude the current logged-in user
       let query = supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, display_name, avatar_url')
         .not('username', 'is', null)
         .limit(5)
 
@@ -90,12 +90,12 @@ function SuggestedAccounts() {
                   />
                 ) : (
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-lg font-bold text-pink-600">
-                    {(account.full_name || account.username || '?')[0].toUpperCase()}
+                    {(account.display_name || account.username || '?')[0].toUpperCase()}
                   </span>
                 )}
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold leading-tight">
-                    {account.full_name || account.username}
+                    {account.display_name || account.username}
                   </p>
                   <p className="truncate text-sm theme-muted">@{account.username}</p>
                 </div>
@@ -215,10 +215,9 @@ export default function AppShell() {
             {location.pathname === '/dashboard' && currentTab === 'activity' ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Inbox</h1>
             ) : location.pathname === '/dashboard' && currentTab === 'following' ? (
-              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Friends</h1>
+              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Following</h1>
             ) : location.pathname === '/dashboard' ? (
               <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-white/65 drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
-                <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>STEM</Link>
                 <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>Explore</Link>
                 <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-white' : ''}>Following</Link>
                 <Link to="/dashboard" className={`relative ${currentTab === 'for-you' ? 'text-white' : ''}`}>
@@ -226,12 +225,8 @@ export default function AppShell() {
                   {currentTab === 'for-you' && <span className="absolute -bottom-3 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-white" />}
                 </Link>
               </div>
-            ) : location.pathname === '/profile' ? (
-              <div className="flex w-full items-center justify-between">
-                <span className="text-xl">‹</span>
-                <span className="text-base font-bold">Profile</span>
-                <span className="text-xl">☰</span>
-              </div>
+            ) : location.pathname === '/profile' || location.pathname.startsWith('/u/') ? (
+              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Profile</h1>
             ) : (
               <Link to="/dashboard" className="text-2xl font-black tracking-tight">HoloStem</Link>
             )}
@@ -276,7 +271,7 @@ export default function AppShell() {
             const active = item.to === '/upload'
               ? location.pathname === '/upload'
               : item.to === '/profile'
-                ? location.pathname === '/profile'
+                ? location.pathname === '/profile' || location.pathname.startsWith('/u/')
                 : location.pathname === '/dashboard' && currentTab === targetTab
             return (
               <li key={item.to}>
