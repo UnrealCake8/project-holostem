@@ -345,7 +345,8 @@ export async function fetchFollowersForUser(userId) {
       follower_id,
       profiles!user_follows_follower_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('following_id', userId)
@@ -362,7 +363,8 @@ export async function fetchFollowingForUser(userId) {
       following_id,
       profiles!user_follows_following_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('follower_id', userId)
@@ -380,7 +382,8 @@ export async function fetchFollowNotifications(userId) {
       created_at,
       profiles!user_follows_follower_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('following_id', userId)
