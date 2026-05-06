@@ -2,10 +2,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchContent,
+  fetchFollowingForUser,
   fetchFollowingIds,
   fetchFollowNotifications,
   fetchProfileAvatarsByUserIds,
-  getDashboardData,
+  fetchSuggestedProfiles,
 } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
@@ -132,6 +133,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
   const [notifications, setNotifications] = useState([])
+  const [followingProfiles, setFollowingProfiles] = useState([])
+  const [suggestedProfiles, setSuggestedProfiles] = useState([])
+  const [loadError, setLoadError] = useState('')
   const [usageSettings, setUsageSettings] = useState(readUsageSettings)
   const [usageState, setUsageState] = useState(() => readUsageState(getDayString()))
   const [modalType, setModalType] = useState('')
@@ -147,33 +151,72 @@ export default function DashboardPage() {
   }, [usageSettings.dailyLimitMinutes, usageState.extraMinutes, usageState.minutesUsed])
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const [, browseData, followingIds, followNotifications] = await Promise.all([
-        getDashboardData(user?.id),
-        fetchContent({ search: searchQuery, category: 'all' }),
-        tab === 'following' && user?.id ? fetchFollowingIds(user.id) : Promise.resolve([]),
-        tab === 'activity' && user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
+    let cancelled = false
+
+    async function hydrateActivity() {
+      const [followNotifications, followingData, suggestedData] = await Promise.all([
+        user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
+        user?.id ? fetchFollowingForUser(user.id) : Promise.resolve([]),
+        fetchSuggestedProfiles({ excludeUserId: user?.id || '', limit: 6 }),
       ])
+
+      if (cancelled) return
+      setFeed([])
+      setNotifications(followNotifications)
+      setFollowingProfiles(followingData.map((entry) => ({
+        id: entry.following_id,
+        ...(entry.profiles || {}),
+      })))
+      setSuggestedProfiles(suggestedData)
+    }
+
+    async function hydrateFeed() {
+      const browseData = await fetchContent({ search: searchQuery, category: 'all' })
+
       if (tab === 'following') {
+        const followingIds = user?.id ? await fetchFollowingIds(user.id) : []
         const filtered = browseData.filter((item) => followingIds.includes(item.user_id))
         const avatarMap = await fetchProfileAvatarsByUserIds(filtered.map((item) => item.user_id))
-        setFeed(filtered.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
-      } else if (tab === 'explore') {
+        if (!cancelled) setFeed(filtered.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        return
+      }
+
+      if (tab === 'explore') {
         const exploreOnly = browseData.filter((item) => item.username === 'holostemexplore')
         const avatarMap = await fetchProfileAvatarsByUserIds(exploreOnly.map((item) => item.user_id))
-        setFeed(exploreOnly.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
-      } else if (tab === 'activity') {
-        setFeed([])
-        setNotifications(followNotifications)
-      } else {
-        const avatarMap = await fetchProfileAvatarsByUserIds(browseData.map((item) => item.user_id))
-        setFeed(browseData.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        if (!cancelled) setFeed(exploreOnly.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        return
       }
-      setLoading(false)
-      setActiveIndex(0)
+
+      const avatarMap = await fetchProfileAvatarsByUserIds(browseData.map((item) => item.user_id))
+      if (!cancelled) setFeed(browseData.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
     }
+
+    async function load() {
+      setLoading(true)
+      setLoadError('')
+      try {
+        if (tab === 'activity') {
+          await hydrateActivity()
+        } else {
+          await hydrateFeed()
+        }
+        if (!cancelled) setActiveIndex(0)
+      } catch (error) {
+        console.error('Dashboard load failed:', error)
+        if (!cancelled) {
+          setFeed([])
+          setLoadError('Unable to load right now. Pull to refresh or try again in a moment.')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
     load()
+    return () => {
+      cancelled = true
+    }
   }, [user?.id, tab, searchQuery])
 
   useEffect(() => {
@@ -291,11 +334,50 @@ export default function DashboardPage() {
   }
 
   if (tab === 'activity') {
+    const storyProfiles = [
+      ...(user ? [{
+        id: user.id,
+        username: user.user_metadata?.username || user.email?.split('@')[0] || 'you',
+        display_name: 'Create',
+        avatar_url: user.user_metadata?.avatar_url || '',
+        isCreate: true,
+      }] : []),
+      ...followingProfiles,
+    ]
+    const activityRows = [
+      {
+        id: 'followers',
+        icon: '♟',
+        tone: 'bg-sky-500',
+        title: 'New followers',
+        body: notifications[0]?.profiles?.username
+          ? `${notifications[0].profiles.username} started following you.`
+          : 'No new followers yet.',
+      },
+      {
+        id: 'activity',
+        icon: '♥',
+        tone: 'bg-rose-500',
+        title: 'Activity',
+        body: notifications.length > 1
+          ? `${notifications.length} recent follow notifications.`
+          : 'Likes, comments, replies, and mentions will appear here.',
+      },
+      {
+        id: 'system',
+        icon: '▰',
+        tone: 'bg-zinc-800',
+        title: 'System notifications',
+        body: 'Screen time and app updates will appear here.',
+      },
+    ]
+
     return (
-      <div className="theme-app-bg mx-auto max-w-2xl p-4">
-        <section className="theme-card rounded-2xl border p-4">
+      <div className="theme-app-bg mx-auto max-w-2xl p-4 pt-20 lg:p-4">
+        <section className="hidden theme-card rounded-2xl border p-4 lg:block">
           <h1 className="text-2xl font-bold text-pink-600">Activity</h1>
           <p className="mt-1 text-sm theme-muted">Recent follows</p>
+          {loadError && <p className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-200">{loadError}</p>}
           <div className="mt-4 space-y-3">
             {notifications.length === 0 && (
               <p className="text-sm theme-muted">No one has followed you yet.</p>
@@ -318,6 +400,69 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        <section className="-mx-4 -mt-20 min-h-screen bg-black pb-28 pt-20 text-white lg:hidden">
+          {loadError && <p className="mx-4 mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-100">{loadError}</p>}
+          <div className="flex gap-4 overflow-x-auto px-4 pb-5 pt-3" style={{ scrollbarWidth: 'none' }}>
+            {storyProfiles.length === 0 ? (
+              <div className="py-3 text-sm text-white/45">Follow creators to see their updates here.</div>
+            ) : storyProfiles.map((profile) => (
+              <Link
+                key={`${profile.isCreate ? 'create' : 'story'}-${profile.id || profile.username}`}
+                to={profile.isCreate ? '/upload' : `/u/${profile.username}`}
+                className="w-20 flex-none text-center"
+              >
+                <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-full border-2 border-cyan-400 bg-zinc-900">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt={profile.username || 'profile'} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-black text-white/70">{(profile.display_name || profile.username || '?')[0].toUpperCase()}</span>
+                  )}
+                  {profile.isCreate && <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-sky-400 text-xl font-black">+</span>}
+                </div>
+                <p className="mt-2 truncate text-xs font-bold">{profile.display_name || profile.username}</p>
+              </Link>
+            ))}
+          </div>
+
+          <div className="space-y-5 px-4">
+            {activityRows.map((row) => (
+              <div key={row.id} className="flex items-center gap-3">
+                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.tone} text-2xl`}>{row.icon}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-medium">{row.title}</p>
+                  <p className="truncate text-base text-white/55">{row.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 bg-[#171717] px-4 py-5">
+            <h2 className="mb-4 text-xl font-black">Suggested accounts <span className="text-sm">ⓘ</span></h2>
+            {suggestedProfiles.length === 0 ? (
+              <p className="text-sm text-white/45">No account suggestions are available right now.</p>
+            ) : (
+              <div className="space-y-5">
+                {suggestedProfiles.map((account) => (
+                  <div key={account.id || account.username} className="flex items-center gap-3">
+                    <Link to={`/u/${account.username}`} className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-zinc-800 text-xl font-black">
+                      {account.avatar_url ? (
+                        <img src={account.avatar_url} alt={account.username || 'profile'} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        <span>{(account.display_name || account.full_name || account.username || '?')[0].toUpperCase()}</span>
+                      )}
+                    </Link>
+                    <Link to={`/u/${account.username}`} className="min-w-0 flex-1">
+                      <p className="truncate text-base font-bold">{account.display_name || account.full_name || account.username}</p>
+                      <p className="truncate text-sm text-white/55">@{account.username}</p>
+                    </Link>
+                    <Link to={`/u/${account.username}`} className="rounded-full bg-rose-500 px-5 py-2 text-sm font-bold">View</Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     )
   }
@@ -325,8 +470,9 @@ export default function DashboardPage() {
   if (feed.length === 0) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white gap-4">
-        <div className="text-5xl">📭</div>
-        <p className="text-xl font-semibold">
+        <div className="text-4xl">📭</div>
+        {loadError && <p className="max-w-xs rounded-xl bg-red-500/10 p-3 text-center text-sm text-red-100">{loadError}</p>}
+        <p className="max-w-xs text-center text-xl font-semibold">
           {tab === 'following'
             ? (searchQuery ? 'No matching posts from people you follow yet' : 'No posts from people you follow yet')
             : tab === 'explore'
@@ -348,8 +494,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      {!usageSettings.onboarded && <UsageOnboarding onSave={handleSaveOnboarding} />}
+      {!usageSettings.onboarded && <div className="hidden lg:block"><UsageOnboarding onSave={handleSaveOnboarding} /></div>}
       {modalType && (
+        <div className="hidden lg:block">
         <MindfulModal
           type={modalType}
           settings={usageSettings}
@@ -358,14 +505,15 @@ export default function DashboardPage() {
           onTakeBreak={handleTakeBreak}
           onContinue={handleContinue}
         />
+        </div>
       )}
 
-      <div className="pointer-events-none fixed left-3 top-3 z-30 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur">
+      <div className="pointer-events-none fixed left-3 top-3 z-30 hidden rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur lg:block">
         {Math.round(usageState.minutesUsed)}m / {usageSettings.dailyLimitMinutes + usageState.extraMinutes}m
       </div>
       <button
         onClick={() => cycleMode(1)}
-        className="fixed left-1/2 top-3 z-30 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur"
+        className="fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur lg:block"
       >
         {tab === 'for-you' ? 'For You' : tab === 'following' ? 'Following' : 'Explore'} · Swipe ↔
       </button>
@@ -374,7 +522,7 @@ export default function DashboardPage() {
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="h-screen overflow-y-scroll snap-y snap-mandatory"
+        className="h-screen overflow-y-scroll snap-y snap-mandatory bg-black"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <style>{`div::-webkit-scrollbar{display:none}`}</style>

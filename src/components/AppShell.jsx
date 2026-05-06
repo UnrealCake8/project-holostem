@@ -15,10 +15,11 @@ const menuItems = [
 ]
 
 const mobileNavItems = [
-  { to: '/dashboard', label: 'Home', icon: '🏠' },
-  { to: '/upload', label: 'Upload', icon: '⬆️' },
-  { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
+  { to: '/dashboard', label: 'Home', icon: '⌂' },
+  { to: '/dashboard?tab=following', label: 'Friends', icon: '♟' },
+  { to: '/upload', label: 'Create', icon: '+' },
+  { to: '/dashboard?tab=activity', label: 'Inbox', icon: '▭' },
+  { to: '/profile', label: 'Profile', icon: '♙' },
 ]
 
 function SuggestedAccounts() {
@@ -210,65 +211,87 @@ export default function AppShell() {
         </aside>
 
         <main className="pb-20 lg:pb-0">
-          <section className="theme-panel sticky top-0 z-30 border-b p-3 lg:hidden">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <Link to="/dashboard" className="text-2xl font-black tracking-tight">
-                HoloStem
-              </Link>
+          <section className={`mobile-shell-top fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between px-4 text-white lg:hidden ${location.pathname === '/dashboard' && currentTab === 'for-you' ? 'bg-transparent' : 'bg-black'}`}>
+            {location.pathname === '/dashboard' && currentTab === 'activity' ? (
+              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Inbox</h1>
+            ) : location.pathname === '/dashboard' && currentTab === 'following' ? (
+              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Friends</h1>
+            ) : location.pathname === '/dashboard' ? (
+              <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-white/65 drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
+                <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>STEM</Link>
+                <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>Explore</Link>
+                <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-white' : ''}>Following</Link>
+                <Link to="/dashboard" className={`relative ${currentTab === 'for-you' ? 'text-white' : ''}`}>
+                  For You
+                  {currentTab === 'for-you' && <span className="absolute -bottom-3 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-white" />}
+                </Link>
+              </div>
+            ) : location.pathname === '/profile' ? (
+              <div className="flex w-full items-center justify-between">
+                <span className="text-xl">‹</span>
+                <span className="text-base font-bold">Profile</span>
+                <span className="text-xl">☰</span>
+              </div>
+            ) : (
+              <Link to="/dashboard" className="text-2xl font-black tracking-tight">HoloStem</Link>
+            )}
+            {location.pathname === '/dashboard' && (
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((open) => !open)}
                 aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-menu-panel"
-                className="rounded-lg border border-black/10 px-3 py-2 text-sm font-semibold"
+                aria-controls="mobile-search-panel"
+                className="absolute right-3 top-4 text-2xl leading-none text-white"
               >
-                {mobileMenuOpen ? 'Close' : 'Menu'}
+                ⌕
               </button>
-            </div>
-            <form onSubmit={handleSearchSubmit}>
-              <label className="sr-only" htmlFor="app-search-mobile">Search videos</label>
-              <input
-                id="app-search-mobile"
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                className="theme-input w-full rounded-full border px-4 py-2 text-sm"
-                placeholder="🔍 Search videos"
-                type="search"
-              />
-            </form>
+            )}
             {mobileMenuOpen && (
-              <div id="mobile-menu-panel" className="mt-3 grid grid-cols-2 gap-2">
-                {menuItems.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-lg border border-black/10 px-3 py-2 text-sm font-semibold"
-                  >
-                    {item.icon} {item.label}
-                  </NavLink>
-                ))}
-              </div>
+              <form
+                id="mobile-search-panel"
+                onSubmit={(event) => { handleSearchSubmit(event); setMobileMenuOpen(false) }}
+                className="absolute left-3 right-3 top-16 rounded-2xl bg-zinc-950/95 p-3 shadow-2xl"
+              >
+                <label className="sr-only" htmlFor="app-search-mobile">Search videos</label>
+                <input
+                  id="app-search-mobile"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/50"
+                  placeholder="Search videos"
+                  type="search"
+                />
+              </form>
             )}
           </section>
           <Outlet />
         </main>
       </div>
 
-      <nav className="theme-panel fixed inset-x-0 bottom-0 z-40 border-t px-2 py-2 lg:hidden">
-        <ul className="grid grid-cols-4 gap-1">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 text-white lg:hidden">
+        <ul className="grid grid-cols-5 items-end gap-1">
           {mobileNavItems.map((item) => {
-            const active = location.pathname === item.to || (item.to.includes('?') && location.pathname === '/dashboard' && location.search.includes('tab=activity'))
+            const itemSearch = item.to.split('?')[1] || ''
+            const targetTab = new URLSearchParams(itemSearch).get('tab') || 'for-you'
+            const active = item.to === '/upload'
+              ? location.pathname === '/upload'
+              : item.to === '/profile'
+                ? location.pathname === '/profile'
+                : location.pathname === '/dashboard' && currentTab === targetTab
             return (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
-                  className={`flex flex-col items-center justify-center rounded-xl px-1 py-2 text-xs font-medium ${
-                    active ? 'bg-pink-500/15 text-pink-500' : 'theme-muted'
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[11px] font-bold ${
+                    active ? 'text-white' : 'text-white/55'
                   }`}
                 >
-                  <span className="text-base">{item.icon}</span>
-                  <span>{item.label}</span>
+                  {item.label === 'Create' ? (
+                    <span className="relative mb-0.5 grid h-8 w-12 place-items-center rounded-xl bg-white text-3xl font-black leading-none text-black shadow-[-7px_0_0_#25f4ee,7px_0_0_#fe2c55]">+</span>
+                  ) : (
+                    <span className="text-3xl leading-none">{item.icon}</span>
+                  )}
+                  <span>{item.label === 'Create' ? '' : item.label}</span>
                 </NavLink>
               </li>
             )

@@ -100,7 +100,7 @@ function FeedPlayer({ item, isActive, isPaused, settings }) {
         {isMuted && (
           <button
             onClick={(e) => { e.stopPropagation(); setIsMuted(false); }}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-lg z-10"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6 text-center text-base font-bold text-white"
           >
             🔊 Enable Sound
           </button>
@@ -138,7 +138,7 @@ function FeedPlayer({ item, isActive, isPaused, settings }) {
         {isMuted && (
           <button
             onClick={(e) => { e.stopPropagation(); setIsMuted(false); }}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white font-bold text-lg z-10"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 px-6 text-center text-base font-bold text-white"
           >
             🔊 Enable Sound/Captions
           </button>
@@ -481,36 +481,36 @@ export default function FeedItem({ item, isActive, onDeleted }) {
         <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
 
         {/* Bottom-left: creator info + caption */}
-        <div className="absolute bottom-0 left-0 right-16 p-4 pb-8 text-white z-30 pointer-events-none">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-20 z-30 p-4 pb-24 text-white lg:pb-8">
           <div className="pointer-events-auto">
             {item?.username && (
               <Link
                 to={`/u/${item.username}`}
-                className="mb-1 inline-flex items-center gap-2 font-bold text-base hover:underline"
+                className="mb-1 inline-flex max-w-full items-center gap-2 text-xl font-black hover:underline lg:text-base"
               >
                 {item?.avatar_url ? (
                   <img
                     src={item.avatar_url}
                     alt={`${item.username} avatar`}
-                    className="h-8 w-8 rounded-full border border-white/30 object-cover"
+                    className="h-7 w-7 shrink-0 rounded-full border border-white/30 object-cover lg:h-8 lg:w-8"
                   />
                 ) : (
-                  <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold border border-white/30">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-pink-400 to-purple-600 text-xs font-bold lg:h-8 lg:w-8">
                     {item.username[0].toUpperCase()}
                   </span>
                 )}
                 @{item.username}
               </Link>
             )}
-            <p className="text-base font-semibold leading-snug drop-shadow-md line-clamp-2">
+            <p className="line-clamp-2 text-base font-semibold leading-snug drop-shadow-md lg:text-base">
               {item?.title}
             </p>
             {item?.description && (
-              <p className="mt-0.5 text-sm text-white/70 line-clamp-2 leading-snug simple-mode-hidden">
+              <p className="mt-1 line-clamp-2 text-sm leading-snug text-white/80 simple-mode-hidden lg:text-sm lg:text-white/70">
                 {item.description}
               </p>
             )}
-            <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <div className="mt-2 hidden flex-wrap items-center gap-2 lg:flex">
               <span className="inline-block rounded-full bg-white/15 backdrop-blur px-2.5 py-0.5 text-xs capitalize">
                 {item?.type}
               </span>
@@ -525,7 +525,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
         </div>
 
         {/* Right action rail */}
-        <div className="absolute right-2 bottom-8 flex flex-col items-center gap-5 pb-2 z-30">
+        <div className="absolute bottom-24 right-3 z-30 flex flex-col items-center gap-4 pb-2 lg:bottom-8 lg:right-2 lg:gap-5">
           {/* Creator avatar + follow */}
           <div className="relative">
             <Link to={item?.username ? `/u/${item.username}` : '#'}>
@@ -536,7 +536,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                   className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-lg"
                 />
               ) : (
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg border-2 border-white shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-pink-400 to-purple-600 text-base font-bold text-white shadow-lg">
                   {(item?.username || '?')[0].toUpperCase()}
                 </div>
               )}
@@ -544,7 +544,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             {!isOwner && (
               <button
                 onClick={handleFollowToggle}
-                className={`absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+                className={`absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[0] font-bold after:text-2xl after:content-['+'] lg:-bottom-3 lg:text-[10px] lg:after:content-[''] ${
                   isFollowing
                     ? 'bg-white text-black border-white'
                     : 'bg-pink-500 text-white border-white'
@@ -555,7 +555,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             )}
           </div>
           {item?.user_id && (
-            <span className="text-white text-[11px] font-semibold drop-shadow simple-mode-hidden -mt-3">
+            <span className="hidden text-white text-[11px] font-semibold drop-shadow simple-mode-hidden -mt-3 lg:block">
               {followersCount} followers
             </span>
           )}
@@ -567,11 +567,11 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             aria-label="Like"
           >
             <span
-              className={`text-3xl transition-transform duration-150 ${liked ? 'scale-125' : 'group-active:scale-125'}`}
+              className={`text-4xl leading-none transition-transform duration-150 lg:text-3xl ${liked ? 'scale-125' : 'group-active:scale-125'}`}
             >
               {liked ? '❤️' : '🤍'}
             </span>
-            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{likeCount}</span>
+            <span className="text-sm font-semibold text-white drop-shadow simple-mode-hidden lg:text-xs">{likeCount}</span>
           </button>
 
           {/* Comment */}
@@ -580,8 +580,8 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             className="flex flex-col items-center gap-1"
             aria-label="Comments"
           >
-            <span className="text-3xl">💬</span>
-            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">{commentCount}</span>
+            <span className="text-4xl leading-none lg:text-3xl">●</span>
+            <span className="text-sm font-semibold text-white drop-shadow simple-mode-hidden lg:text-xs">{commentCount}</span>
           </button>
 
           {/* Share */}
@@ -590,8 +590,8 @@ export default function FeedItem({ item, isActive, onDeleted }) {
             className="flex flex-col items-center gap-1"
             aria-label="Share"
           >
-            <span className="text-3xl">↗️</span>
-            <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Share</span>
+            <span className="text-4xl leading-none lg:text-3xl">↪</span>
+            <span className="text-sm font-semibold text-white drop-shadow simple-mode-hidden lg:text-xs">Share</span>
           </button>
 
           {/* Delete (owner only) */}
@@ -601,8 +601,8 @@ export default function FeedItem({ item, isActive, onDeleted }) {
               className="flex flex-col items-center gap-1"
               aria-label="Delete"
             >
-              <span className="text-2xl">🗑️</span>
-              <span className="text-white text-xs font-semibold drop-shadow simple-mode-hidden">Delete</span>
+              <span className="text-3xl leading-none lg:text-2xl">🗑️</span>
+              <span className="text-sm font-semibold text-white drop-shadow simple-mode-hidden lg:text-xs">Delete</span>
             </button>
           )}
         </div>
