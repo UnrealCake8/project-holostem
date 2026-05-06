@@ -258,6 +258,24 @@ export async function getUserIdByUsername(username) {
   return data?.id ?? null
 }
 
+export async function fetchSuggestedProfiles({ excludeUserId = '', limit = 8 } = {}) {
+  if (!hasSupabaseConfig) return []
+
+  let query = supabase
+    .from('profiles')
+    .select('id, username, display_name, full_name, avatar_url, bio')
+    .not('username', 'is', null)
+    .limit(limit)
+
+  if (excludeUserId) {
+    query = query.neq('id', excludeUserId)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
 export async function fetchProfileAvatarsByUserIds(userIds = []) {
   const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
   if (uniqueIds.length === 0) return {}
