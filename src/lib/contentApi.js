@@ -258,6 +258,24 @@ export async function getUserIdByUsername(username) {
   return data?.id ?? null
 }
 
+export async function fetchSuggestedProfiles({ excludeUserId = '', limit = 8 } = {}) {
+  if (!hasSupabaseConfig) return []
+
+  let query = supabase
+    .from('profiles')
+    .select('id, username, display_name, full_name, avatar_url, bio')
+    .not('username', 'is', null)
+    .limit(limit)
+
+  if (excludeUserId) {
+    query = query.neq('id', excludeUserId)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
 export async function fetchProfileAvatarsByUserIds(userIds = []) {
   const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
   if (uniqueIds.length === 0) return {}
@@ -345,7 +363,8 @@ export async function fetchFollowersForUser(userId) {
       follower_id,
       profiles!user_follows_follower_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('following_id', userId)
@@ -362,7 +381,8 @@ export async function fetchFollowingForUser(userId) {
       following_id,
       profiles!user_follows_following_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('follower_id', userId)
@@ -380,7 +400,8 @@ export async function fetchFollowNotifications(userId) {
       created_at,
       profiles!user_follows_follower_id_fkey (
         username,
-        display_name
+        display_name,
+        avatar_url
       )
     `)
     .eq('following_id', userId)

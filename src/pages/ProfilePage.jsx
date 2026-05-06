@@ -95,15 +95,14 @@ export default function ProfilePage() {
     <div className="theme-app-bg space-y-4 p-4 lg:p-4">
       <section className="-mx-4 -mt-4 bg-[#121212] px-4 pb-0 pt-20 text-white lg:hidden">
         <div className="flex flex-col items-center text-center">
-          <div className="relative h-24 w-24 rounded-full border border-white/20 bg-[#151a17]">
+          <div className="relative h-20 w-20 rounded-full border border-white/20 bg-[#151a17]">
             <ProfileAvatar profile={profile} />
-            <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-sky-400 text-3xl font-black text-white">+</span>
+            <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-sky-400 text-2xl font-black text-white">+</span>
           </div>
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex max-w-full items-center justify-center gap-2">
             <span className="text-xl">▣</span>
-            <h1 className="text-2xl font-black tracking-tight">{displayName}</h1>
-            <span className="grid h-7 min-w-7 place-items-center rounded-full bg-rose-500 px-2 text-base font-black">3</span>
-            <button className="rounded-full bg-white/15 px-5 py-2 text-lg font-bold">Edit</button>
+            <h1 className="truncate text-2xl font-black tracking-tight">{displayName}</h1>
+            <button className="rounded-full bg-white/15 px-4 py-1.5 text-base font-bold">Edit</button>
           </div>
           <p className="text-lg text-white/55">@{handle}</p>
           <div className="mt-6 grid w-full max-w-sm grid-cols-3 divide-x divide-white/10">
@@ -120,30 +119,41 @@ export default function ProfilePage() {
               <p className="text-lg text-white/55">Likes</p>
             </div>
           </div>
-          <p className="mt-5 text-xl">{profile.bio || 'tweet'}</p>
+          {profile.bio ? <p className="mt-5 text-xl">{profile.bio}</p> : <p className="mt-5 text-base text-white/45">No bio yet.</p>}
         </div>
-        <div className="mt-10 grid grid-cols-5 items-end border-b border-white/20 text-white/55">
+        <div className="mt-8 grid grid-cols-5 items-end border-b border-white/20 text-white/55">
           {['▦', '▣', '↕', '♡', '♡'].map((icon, index) => (
-            <button key={`${icon}-${index}`} className={`pb-3 text-4xl ${index === 0 ? 'border-b-2 border-white text-white' : ''}`}>
+            <button key={`${icon}-${index}`} className={`pb-3 text-3xl ${index === 0 ? 'border-b-2 border-white text-white' : ''}`}>
               {icon}
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-px bg-black">
-          {(videos.length ? videos : Array.from({ length: 9 }, (_, index) => ({ id: `placeholder-${index}`, title: 'No video yet', media_url: '', like_count: index === 0 ? 50 : index + 12 }))).map((video, index) => (
-            <Link key={video.id} to={video.id?.startsWith?.('placeholder') ? '/upload' : `/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
-              {video.media_url ? (
-                <video src={video.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
-              ) : (
-                <div className="h-full w-full bg-gradient-to-br from-slate-800 via-zinc-700 to-black" />
-              )}
-              {index === 0 && <span className="absolute left-0 top-3 bg-rose-600 px-2 py-0.5 text-sm font-black">Pinned</span>}
-              <span className="absolute right-2 top-2 rounded-md bg-white text-white">▢</span>
-              <span className="absolute bottom-2 left-2 text-sm font-bold drop-shadow">▷ {video.like_count || 0}</span>
-              <p className="absolute bottom-8 left-1 right-1 line-clamp-2 text-center text-sm font-semibold drop-shadow">{video.title}</p>
-            </Link>
-          ))}
-        </div>
+        {videos.length === 0 ? (
+          <div className="border-t border-white/10 py-12 text-center text-white/50">
+            <p className="text-lg font-semibold">No posts yet</p>
+            <Link to="/upload" className="mt-3 inline-block rounded-full bg-rose-500 px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-px bg-black">
+            {videos.map((video, index) => {
+              const isDirectVideo = video.media_url?.toLowerCase().endsWith('.mp4')
+              return (
+                <Link key={video.id} to={`/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
+                  {isDirectVideo ? (
+                    <video src={video.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-black p-2 text-center text-xs font-semibold text-white/70">
+                      {video.title}
+                    </div>
+                  )}
+                  {index === 0 && <span className="absolute left-0 top-3 bg-rose-600 px-2 py-0.5 text-xs font-black">Pinned</span>}
+                  <span className="absolute right-2 top-2 rounded-md bg-white text-white">▢</span>
+                  <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       <div className="hidden lg:block">

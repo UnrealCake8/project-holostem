@@ -2,10 +2,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchContent,
+  fetchFollowingForUser,
   fetchFollowingIds,
   fetchFollowNotifications,
   fetchProfileAvatarsByUserIds,
-  getDashboardData,
+  fetchSuggestedProfiles,
 } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
@@ -132,6 +133,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
   const [notifications, setNotifications] = useState([])
+  const [followingProfiles, setFollowingProfiles] = useState([])
+  const [suggestedProfiles, setSuggestedProfiles] = useState([])
+  const [loadError, setLoadError] = useState('')
   const [usageSettings, setUsageSettings] = useState(readUsageSettings)
   const [usageState, setUsageState] = useState(() => readUsageState(getDayString()))
   const [modalType, setModalType] = useState('')
@@ -147,33 +151,72 @@ export default function DashboardPage() {
   }, [usageSettings.dailyLimitMinutes, usageState.extraMinutes, usageState.minutesUsed])
 
   useEffect(() => {
-    async function load() {
-      setLoading(true)
-      const [, browseData, followingIds, followNotifications] = await Promise.all([
-        getDashboardData(user?.id),
-        fetchContent({ search: searchQuery, category: 'all' }),
-        tab === 'following' && user?.id ? fetchFollowingIds(user.id) : Promise.resolve([]),
-        tab === 'activity' && user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
+    let cancelled = false
+
+    async function hydrateActivity() {
+      const [followNotifications, followingData, suggestedData] = await Promise.all([
+        user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
+        user?.id ? fetchFollowingForUser(user.id) : Promise.resolve([]),
+        fetchSuggestedProfiles({ excludeUserId: user?.id || '', limit: 6 }),
       ])
+
+      if (cancelled) return
+      setFeed([])
+      setNotifications(followNotifications)
+      setFollowingProfiles(followingData.map((entry) => ({
+        id: entry.following_id,
+        ...(entry.profiles || {}),
+      })))
+      setSuggestedProfiles(suggestedData)
+    }
+
+    async function hydrateFeed() {
+      const browseData = await fetchContent({ search: searchQuery, category: 'all' })
+
       if (tab === 'following') {
+        const followingIds = user?.id ? await fetchFollowingIds(user.id) : []
         const filtered = browseData.filter((item) => followingIds.includes(item.user_id))
         const avatarMap = await fetchProfileAvatarsByUserIds(filtered.map((item) => item.user_id))
-        setFeed(filtered.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
-      } else if (tab === 'explore') {
+        if (!cancelled) setFeed(filtered.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        return
+      }
+
+      if (tab === 'explore') {
         const exploreOnly = browseData.filter((item) => item.username === 'holostemexplore')
         const avatarMap = await fetchProfileAvatarsByUserIds(exploreOnly.map((item) => item.user_id))
-        setFeed(exploreOnly.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
-      } else if (tab === 'activity') {
-        setFeed([])
-        setNotifications(followNotifications)
-      } else {
-        const avatarMap = await fetchProfileAvatarsByUserIds(browseData.map((item) => item.user_id))
-        setFeed(browseData.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        if (!cancelled) setFeed(exploreOnly.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
+        return
       }
-      setLoading(false)
-      setActiveIndex(0)
+
+      const avatarMap = await fetchProfileAvatarsByUserIds(browseData.map((item) => item.user_id))
+      if (!cancelled) setFeed(browseData.map((item) => ({ ...item, avatar_url: avatarMap[item.user_id] || '' })))
     }
+
+    async function load() {
+      setLoading(true)
+      setLoadError('')
+      try {
+        if (tab === 'activity') {
+          await hydrateActivity()
+        } else {
+          await hydrateFeed()
+        }
+        if (!cancelled) setActiveIndex(0)
+      } catch (error) {
+        console.error('Dashboard load failed:', error)
+        if (!cancelled) {
+          setFeed([])
+          setLoadError('Unable to load right now. Pull to refresh or try again in a moment.')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
     load()
+    return () => {
+      cancelled = true
+    }
   }, [user?.id, tab, searchQuery])
 
   useEffect(() => {
@@ -291,10 +334,42 @@ export default function DashboardPage() {
   }
 
   if (tab === 'activity') {
-    const suggested = [
-      { name: 'edmondx', hint: 'Suggested for you', avatar: '☠', tone: 'from-cyan-400 to-emerald-300' },
-      { name: 'malekkalt', hint: 'From your contacts', avatar: '⚽', tone: 'from-yellow-300 to-lime-500' },
-      { name: 'daily_stem', hint: 'Followed by creators', avatar: '🧪', tone: 'from-pink-400 to-purple-500' },
+    const storyProfiles = [
+      ...(user ? [{
+        id: user.id,
+        username: user.user_metadata?.username || user.email?.split('@')[0] || 'you',
+        display_name: 'Create',
+        avatar_url: user.user_metadata?.avatar_url || '',
+        isCreate: true,
+      }] : []),
+      ...followingProfiles,
+    ]
+    const activityRows = [
+      {
+        id: 'followers',
+        icon: '♟',
+        tone: 'bg-sky-500',
+        title: 'New followers',
+        body: notifications[0]?.profiles?.username
+          ? `${notifications[0].profiles.username} started following you.`
+          : 'No new followers yet.',
+      },
+      {
+        id: 'activity',
+        icon: '♥',
+        tone: 'bg-rose-500',
+        title: 'Activity',
+        body: notifications.length > 1
+          ? `${notifications.length} recent follow notifications.`
+          : 'Likes, comments, replies, and mentions will appear here.',
+      },
+      {
+        id: 'system',
+        icon: '▰',
+        tone: 'bg-zinc-800',
+        title: 'System notifications',
+        body: 'Screen time and app updates will appear here.',
+      },
     ]
 
     return (
@@ -302,6 +377,7 @@ export default function DashboardPage() {
         <section className="hidden theme-card rounded-2xl border p-4 lg:block">
           <h1 className="text-2xl font-bold text-pink-600">Activity</h1>
           <p className="mt-1 text-sm theme-muted">Recent follows</p>
+          {loadError && <p className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-200">{loadError}</p>}
           <div className="mt-4 space-y-3">
             {notifications.length === 0 && (
               <p className="text-sm theme-muted">No one has followed you yet.</p>
@@ -326,65 +402,65 @@ export default function DashboardPage() {
         </section>
 
         <section className="-mx-4 -mt-20 min-h-screen bg-black pb-28 pt-20 text-white lg:hidden">
-          <div className="flex gap-7 overflow-x-auto px-5 pb-6 pt-4" style={{ scrollbarWidth: 'none' }}>
-            <div className="w-24 flex-none text-center">
-              <div className="relative mx-auto h-24 w-24 rounded-full border border-white/15 bg-[#171b17]">
-                <span className="absolute -top-3 left-4 rounded-2xl bg-zinc-700 px-3 py-2 text-left text-lg font-black leading-tight text-white/70">What's<br />good?</span>
-                <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-sky-400 text-3xl font-black">+</span>
-              </div>
-              <p className="mt-3 text-base font-bold">Create</p>
-            </div>
-            {suggested.map((story) => (
-              <div key={story.name} className="w-24 flex-none text-center">
-                <div className={`mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br ${story.tone} p-1`}>
-                  <div className="grid h-full w-full place-items-center rounded-full bg-white text-4xl text-black">{story.avatar}</div>
+          {loadError && <p className="mx-4 mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-100">{loadError}</p>}
+          <div className="flex gap-4 overflow-x-auto px-4 pb-5 pt-3" style={{ scrollbarWidth: 'none' }}>
+            {storyProfiles.length === 0 ? (
+              <div className="py-3 text-sm text-white/45">Follow creators to see their updates here.</div>
+            ) : storyProfiles.map((profile) => (
+              <Link
+                key={`${profile.isCreate ? 'create' : 'story'}-${profile.id || profile.username}`}
+                to={profile.isCreate ? '/upload' : `/u/${profile.username}`}
+                className="w-20 flex-none text-center"
+              >
+                <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-full border-2 border-cyan-400 bg-zinc-900">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt={profile.username || 'profile'} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-black text-white/70">{(profile.display_name || profile.username || '?')[0].toUpperCase()}</span>
+                  )}
+                  {profile.isCreate && <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-sky-400 text-xl font-black">+</span>}
                 </div>
-                <p className="mt-3 truncate text-base font-bold">{story.name}</p>
+                <p className="mt-2 truncate text-xs font-bold">{profile.display_name || profile.username}</p>
+              </Link>
+            ))}
+          </div>
+
+          <div className="space-y-5 px-4">
+            {activityRows.map((row) => (
+              <div key={row.id} className="flex items-center gap-3">
+                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.tone} text-2xl`}>{row.icon}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-medium">{row.title}</p>
+                  <p className="truncate text-base text-white/55">{row.body}</p>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="space-y-6 px-5">
-            <div className="flex items-center gap-4">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-sky-500 text-4xl">♟</div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl">New followers</p>
-                <p className="truncate text-xl text-white/55">
-                  {notifications[0]?.profiles?.username ? `${notifications[0].profiles.username} started following you.` : 'No new followers yet.'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-rose-500 text-4xl">♥</div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl">Activity</p>
-                <p className="truncate text-xl text-white/55">Likes, comments, replies, and mentions.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-zinc-800 text-4xl">▰</div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl">System notifications</p>
-                <p className="truncate text-xl text-white/55">Screen time reminders · 4d</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 bg-[#171717] px-5 py-6">
-            <h2 className="mb-5 text-2xl font-black">Suggested accounts <span className="text-lg">ⓘ</span></h2>
-            <div className="space-y-8">
-              {suggested.map((account) => (
-                <div key={`suggested-${account.name}`} className="flex items-center gap-4">
-                  <div className={`grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br ${account.tone} text-3xl`}>{account.avatar}</div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-lg font-bold">{account.name}</p>
-                    <p className="truncate text-base text-white/55">{account.hint}</p>
+          <div className="mt-6 bg-[#171717] px-4 py-5">
+            <h2 className="mb-4 text-xl font-black">Suggested accounts <span className="text-sm">ⓘ</span></h2>
+            {suggestedProfiles.length === 0 ? (
+              <p className="text-sm text-white/45">No account suggestions are available right now.</p>
+            ) : (
+              <div className="space-y-5">
+                {suggestedProfiles.map((account) => (
+                  <div key={account.id || account.username} className="flex items-center gap-3">
+                    <Link to={`/u/${account.username}`} className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-zinc-800 text-xl font-black">
+                      {account.avatar_url ? (
+                        <img src={account.avatar_url} alt={account.username || 'profile'} className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        <span>{(account.display_name || account.full_name || account.username || '?')[0].toUpperCase()}</span>
+                      )}
+                    </Link>
+                    <Link to={`/u/${account.username}`} className="min-w-0 flex-1">
+                      <p className="truncate text-base font-bold">{account.display_name || account.full_name || account.username}</p>
+                      <p className="truncate text-sm text-white/55">@{account.username}</p>
+                    </Link>
+                    <Link to={`/u/${account.username}`} className="rounded-full bg-rose-500 px-5 py-2 text-sm font-bold">View</Link>
                   </div>
-                  <button className="rounded-full bg-rose-500 px-8 py-2 text-xl font-bold">Follow</button>
-                  <button className="text-4xl text-white/40">×</button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -394,8 +470,9 @@ export default function DashboardPage() {
   if (feed.length === 0) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white gap-4">
-        <div className="text-5xl">📭</div>
-        <p className="text-xl font-semibold">
+        <div className="text-4xl">📭</div>
+        {loadError && <p className="max-w-xs rounded-xl bg-red-500/10 p-3 text-center text-sm text-red-100">{loadError}</p>}
+        <p className="max-w-xs text-center text-xl font-semibold">
           {tab === 'following'
             ? (searchQuery ? 'No matching posts from people you follow yet' : 'No posts from people you follow yet')
             : tab === 'explore'

@@ -215,18 +215,9 @@ export default function AppShell() {
             {location.pathname === '/dashboard' && currentTab === 'activity' ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Inbox</h1>
             ) : location.pathname === '/dashboard' && currentTab === 'following' ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="relative grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-white/10 text-xl text-white/70">
-                    ○
-                    <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-sky-400 text-sm font-black text-white">+</span>
-                  </span>
-                  <span className="h-11 w-11 rounded-full border-2 border-cyan-400 bg-gradient-to-br from-amber-200 to-slate-900" />
-                </div>
-                <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Friends</h1>
-              </>
+              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Friends</h1>
             ) : location.pathname === '/dashboard' ? (
-              <div className="flex w-full items-center justify-between pr-12 text-lg font-bold text-white/60 drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
+              <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-white/65 drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
                 <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>STEM</Link>
                 <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>Explore</Link>
                 <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-white' : ''}>Following</Link>
@@ -250,7 +241,7 @@ export default function AppShell() {
                 onClick={() => setMobileMenuOpen((open) => !open)}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-search-panel"
-                className="absolute right-3 top-3 text-3xl leading-none text-white"
+                className="absolute right-3 top-4 text-2xl leading-none text-white"
               >
                 ⌕
               </button>
@@ -280,8 +271,8 @@ export default function AppShell() {
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 text-white lg:hidden">
         <ul className="grid grid-cols-5 items-end gap-1">
           {mobileNavItems.map((item) => {
-            const target = new URL(item.to, window.location.origin)
-            const targetTab = target.searchParams.get('tab') || 'for-you'
+            const itemSearch = item.to.split('?')[1] || ''
+            const targetTab = new URLSearchParams(itemSearch).get('tab') || 'for-you'
             const active = item.to === '/upload'
               ? location.pathname === '/upload'
               : item.to === '/profile'
@@ -296,9 +287,9 @@ export default function AppShell() {
                   }`}
                 >
                   {item.label === 'Create' ? (
-                    <span className="relative mb-0.5 grid h-9 w-14 place-items-center rounded-xl bg-white text-3xl font-black leading-none text-black shadow-[-7px_0_0_#25f4ee,7px_0_0_#fe2c55]">+</span>
+                    <span className="relative mb-0.5 grid h-8 w-12 place-items-center rounded-xl bg-white text-3xl font-black leading-none text-black shadow-[-7px_0_0_#25f4ee,7px_0_0_#fe2c55]">+</span>
                   ) : (
-                    <span className="text-4xl leading-none">{item.icon}</span>
+                    <span className="text-3xl leading-none">{item.icon}</span>
                   )}
                   <span>{item.label === 'Create' ? '' : item.label}</span>
                 </NavLink>
