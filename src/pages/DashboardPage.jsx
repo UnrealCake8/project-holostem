@@ -291,9 +291,15 @@ export default function DashboardPage() {
   }
 
   if (tab === 'activity') {
+    const suggested = [
+      { name: 'edmondx', hint: 'Suggested for you', avatar: '☠', tone: 'from-cyan-400 to-emerald-300' },
+      { name: 'malekkalt', hint: 'From your contacts', avatar: '⚽', tone: 'from-yellow-300 to-lime-500' },
+      { name: 'daily_stem', hint: 'Followed by creators', avatar: '🧪', tone: 'from-pink-400 to-purple-500' },
+    ]
+
     return (
-      <div className="theme-app-bg mx-auto max-w-2xl p-4">
-        <section className="theme-card rounded-2xl border p-4">
+      <div className="theme-app-bg mx-auto max-w-2xl p-4 pt-20 lg:p-4">
+        <section className="hidden theme-card rounded-2xl border p-4 lg:block">
           <h1 className="text-2xl font-bold text-pink-600">Activity</h1>
           <p className="mt-1 text-sm theme-muted">Recent follows</p>
           <div className="mt-4 space-y-3">
@@ -316,6 +322,69 @@ export default function DashboardPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="-mx-4 -mt-20 min-h-screen bg-black pb-28 pt-20 text-white lg:hidden">
+          <div className="flex gap-7 overflow-x-auto px-5 pb-6 pt-4" style={{ scrollbarWidth: 'none' }}>
+            <div className="w-24 flex-none text-center">
+              <div className="relative mx-auto h-24 w-24 rounded-full border border-white/15 bg-[#171b17]">
+                <span className="absolute -top-3 left-4 rounded-2xl bg-zinc-700 px-3 py-2 text-left text-lg font-black leading-tight text-white/70">What's<br />good?</span>
+                <span className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-sky-400 text-3xl font-black">+</span>
+              </div>
+              <p className="mt-3 text-base font-bold">Create</p>
+            </div>
+            {suggested.map((story) => (
+              <div key={story.name} className="w-24 flex-none text-center">
+                <div className={`mx-auto grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br ${story.tone} p-1`}>
+                  <div className="grid h-full w-full place-items-center rounded-full bg-white text-4xl text-black">{story.avatar}</div>
+                </div>
+                <p className="mt-3 truncate text-base font-bold">{story.name}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-6 px-5">
+            <div className="flex items-center gap-4">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-sky-500 text-4xl">♟</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl">New followers</p>
+                <p className="truncate text-xl text-white/55">
+                  {notifications[0]?.profiles?.username ? `${notifications[0].profiles.username} started following you.` : 'No new followers yet.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-rose-500 text-4xl">♥</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl">Activity</p>
+                <p className="truncate text-xl text-white/55">Likes, comments, replies, and mentions.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-zinc-800 text-4xl">▰</div>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl">System notifications</p>
+                <p className="truncate text-xl text-white/55">Screen time reminders · 4d</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-[#171717] px-5 py-6">
+            <h2 className="mb-5 text-2xl font-black">Suggested accounts <span className="text-lg">ⓘ</span></h2>
+            <div className="space-y-8">
+              {suggested.map((account) => (
+                <div key={`suggested-${account.name}`} className="flex items-center gap-4">
+                  <div className={`grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br ${account.tone} text-3xl`}>{account.avatar}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-lg font-bold">{account.name}</p>
+                    <p className="truncate text-base text-white/55">{account.hint}</p>
+                  </div>
+                  <button className="rounded-full bg-rose-500 px-8 py-2 text-xl font-bold">Follow</button>
+                  <button className="text-4xl text-white/40">×</button>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </div>
@@ -348,8 +417,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      {!usageSettings.onboarded && <UsageOnboarding onSave={handleSaveOnboarding} />}
+      {!usageSettings.onboarded && <div className="hidden lg:block"><UsageOnboarding onSave={handleSaveOnboarding} /></div>}
       {modalType && (
+        <div className="hidden lg:block">
         <MindfulModal
           type={modalType}
           settings={usageSettings}
@@ -358,14 +428,15 @@ export default function DashboardPage() {
           onTakeBreak={handleTakeBreak}
           onContinue={handleContinue}
         />
+        </div>
       )}
 
-      <div className="pointer-events-none fixed left-3 top-3 z-30 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur">
+      <div className="pointer-events-none fixed left-3 top-3 z-30 hidden rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur lg:block">
         {Math.round(usageState.minutesUsed)}m / {usageSettings.dailyLimitMinutes + usageState.extraMinutes}m
       </div>
       <button
         onClick={() => cycleMode(1)}
-        className="fixed left-1/2 top-3 z-30 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur"
+        className="fixed left-1/2 top-3 z-30 hidden -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur lg:block"
       >
         {tab === 'for-you' ? 'For You' : tab === 'following' ? 'Following' : 'Explore'} · Swipe ↔
       </button>
@@ -374,7 +445,7 @@ export default function DashboardPage() {
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="h-screen overflow-y-scroll snap-y snap-mandatory"
+        className="h-screen overflow-y-scroll snap-y snap-mandatory bg-black"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
