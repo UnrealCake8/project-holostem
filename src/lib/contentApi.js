@@ -38,17 +38,16 @@ export async function fetchVideosByUsername(username, userId = '') {
       .sort((a, b) => Number(Boolean(b.is_pinned)) - Number(Boolean(a.is_pinned)))
   }
 
-  let query = supabase
-    .from('contents')
-    .select('*')
-    .or('status.eq.published,status.is.null')
+  let query = supabase.from('contents').select('*')
 
   if (userId) {
-    const identityFilters = [`user_id.eq.${userId}`]
-    if (username) identityFilters.unshift(`username.eq.${username}`)
-    query = query.or(identityFilters.join(','))
+    query = query
+      .eq('user_id', userId)
+      .or('status.is.null,status.not.in.(removed,rejected)')
   } else {
-    query = query.eq('username', username)
+    query = query
+      .eq('username', username)
+      .or('status.eq.published,status.is.null')
   }
 
   const { data, error } = await query
