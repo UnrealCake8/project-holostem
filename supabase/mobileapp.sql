@@ -39,6 +39,8 @@ create table if not exists public.contents (
   points int not null default 10,
   recommended boolean default false,
   is_trending boolean default false,
+  is_pinned boolean default false,
+  pinned_at timestamptz,
   status text default 'published',
   moderation_method text,
   moderation_reason text,
@@ -59,6 +61,8 @@ alter table public.contents add column if not exists difficulty text;
 alter table public.contents add column if not exists points int not null default 10;
 alter table public.contents add column if not exists recommended boolean default false;
 alter table public.contents add column if not exists is_trending boolean default false;
+alter table public.contents add column if not exists is_pinned boolean default false;
+alter table public.contents add column if not exists pinned_at timestamptz;
 alter table public.contents add column if not exists status text default 'published';
 alter table public.contents add column if not exists moderation_method text;
 alter table public.contents add column if not exists moderation_reason text;
@@ -68,6 +72,7 @@ alter table public.contents add column if not exists updated_at timestamptz defa
 create index if not exists contents_user_id_idx on public.contents (user_id);
 create index if not exists contents_username_idx on public.contents (username);
 create index if not exists contents_status_created_idx on public.contents (status, created_at desc);
+create index if not exists contents_pinned_idx on public.contents (username, is_pinned desc, pinned_at desc, created_at desc);
 
 create table if not exists public.user_follows (
   follower_id uuid not null references auth.users(id) on delete cascade,

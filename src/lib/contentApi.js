@@ -33,13 +33,17 @@ export async function fetchContentById(id) {
 
 export async function fetchVideosByUsername(username) {
   if (!hasSupabaseConfig) {
-    return fallbackContent.filter((item) => item.username === username)
+    return fallbackContent
+      .filter((item) => item.username === username)
+      .sort((a, b) => Number(Boolean(b.is_pinned)) - Number(Boolean(a.is_pinned)))
   }
 
   const { data, error } = await supabase
     .from('contents')
     .select('*')
     .eq('username', username)
+    .order('is_pinned', { ascending: false, nullsFirst: false })
+    .order('pinned_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -50,6 +54,22 @@ export async function deleteContent(contentId) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured.')
   const { error } = await supabase.from('contents').delete().eq('id', contentId)
   if (error) throw error
+}
+
+export async function updateContentPin({ contentId, userId, isPinned }) {
+  if (!hasSupabaseConfig || !contentId || !userId) return null
+  const { data, error } = await supabase
+    .from('contents')
+    .update({
+      is_pinned: isPinned,
+      pinned_at: isPinned ? new Date().toISOString() : null,
+    })
+    .eq('id', contentId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
 }
 
 // ─── Likes ────────────────────────────────────────────────────────────────────

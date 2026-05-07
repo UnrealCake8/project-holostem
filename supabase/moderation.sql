@@ -103,6 +103,7 @@ create policy "public read published contents" on public.contents for select usi
 create policy "auth create own contents" on public.contents for insert to authenticated with check (auth.uid()=user_id);
 create policy "owner delete own contents" on public.contents for delete to authenticated using (auth.uid()=user_id or public.is_moderator());
 create policy "mod update contents" on public.contents for update to authenticated using (public.is_moderator()) with check (public.is_moderator());
+create policy "owner update own contents" on public.contents for update to authenticated using (auth.uid()=user_id) with check (auth.uid()=user_id);
 
 drop policy if exists "public read comments" on public.comments;
 create policy "public read published comments" on public.comments for select using (status='published' or status is null or public.is_moderator());
