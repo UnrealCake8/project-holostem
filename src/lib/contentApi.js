@@ -123,6 +123,17 @@ export async function fetchLikeCount(contentId) {
   return count ?? 0
 }
 
+export async function fetchLikedVideosForUser(userId) {
+  if (!hasSupabaseConfig || !userId) return []
+  const { data, error } = await supabase
+    .from('liked_videos')
+    .select('*, contents(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => row.contents).filter(Boolean)
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function fetchComments(contentId) {
