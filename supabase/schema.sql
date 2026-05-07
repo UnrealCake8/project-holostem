@@ -24,14 +24,19 @@ create table if not exists public.contents (
   points int not null default 10,
   recommended boolean default false,
   is_trending boolean default false,
+  is_pinned boolean default false,
+  pinned_at timestamptz,
   created_at timestamptz default now()
 );
 
 alter table public.contents add column if not exists user_id uuid references auth.users(id) on delete set null;
 alter table public.contents add column if not exists username text;
+alter table public.contents add column if not exists is_pinned boolean default false;
+alter table public.contents add column if not exists pinned_at timestamptz;
 alter table public.profiles add column if not exists username text;
 alter table public.profiles add column if not exists avatar_url text;
 create unique index if not exists profiles_username_unique on public.profiles (username);
+create index if not exists contents_pinned_idx on public.contents (username, is_pinned desc, pinned_at desc, created_at desc);
 
 create table if not exists public.user_progress (
   user_id uuid primary key references auth.users(id) on delete cascade,

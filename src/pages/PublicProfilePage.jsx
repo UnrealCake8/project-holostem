@@ -14,6 +14,36 @@ import {
   fetchFollowingForUser,
 } from '../lib/contentApi'
 
+function SocialAccountList({ title, entries, idKey, emptyMessage }) {
+  return (
+    <div className="mt-5 w-full max-w-sm rounded-2xl bg-white/5 p-4 text-left">
+      <p className="mb-3 text-sm font-bold uppercase tracking-[0.2em] text-white/45">{title}</p>
+      <div className="space-y-3">
+        {entries.length === 0 && <p className="text-sm text-white/45">{emptyMessage}</p>}
+        {entries.map((entry) => {
+          const account = entry.profiles
+          const linkedUsername = account?.username || 'user'
+          return (
+            <Link key={entry[idKey]} to={`/u/${linkedUsername}`} className="flex items-center gap-3 rounded-xl p-2 hover:bg-white/10">
+              {account?.avatar_url ? (
+                <img src={account.avatar_url} alt={`${linkedUsername} avatar`} className="h-10 w-10 rounded-full object-cover" />
+              ) : (
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#151a17] text-base font-black text-white/45">
+                  {(account?.display_name || linkedUsername || '?')[0].toUpperCase()}
+                </span>
+              )}
+              <span>
+                <span className="block text-sm font-bold text-white">{account?.display_name || linkedUsername}</span>
+                <span className="block text-xs text-white/50">@{linkedUsername}</span>
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function PublicProfileAvatar({ profile, username }) {
   if (profile?.avatar_url) {
     return <img src={profile.avatar_url} alt={`${username} avatar`} className="h-full w-full rounded-full object-cover" />
@@ -37,7 +67,7 @@ function VideoGrid({ videos }) {
 
   return (
     <div className="grid grid-cols-3 gap-px bg-black">
-      {videos.map((video, index) => {
+      {videos.map((video) => {
         const isDirectVideo = video.media_url?.toLowerCase().endsWith('.mp4')
         return (
           <Link key={video.id} to={`/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
@@ -48,7 +78,7 @@ function VideoGrid({ videos }) {
                 {video.title}
               </div>
             )}
-            {index === 0 && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
+            {video.is_pinned && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
             <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
           </Link>
         )
@@ -68,6 +98,7 @@ export default function PublicProfilePage() {
   const [followingCount, setFollowingCount] = useState(0)
   const [followers, setFollowers] = useState([])
   const [following, setFollowing] = useState([])
+  const [activeSocialList, setActiveSocialList] = useState('')
   const isSelf = Boolean(user?.id && profileUserId && user.id === profileUserId)
   const totalLikes = videos.reduce((sum, video) => sum + Number(video.like_count || 0), 0)
   const displayName = profile?.display_name || username || 'Creator'
@@ -144,20 +175,26 @@ export default function PublicProfilePage() {
           </div>
           <p className="text-lg text-white/55">@{username}</p>
           <div className="mt-6 grid w-full max-w-sm grid-cols-3 divide-x divide-white/10">
-            <div>
+            <button type="button" onClick={() => setActiveSocialList((current) => (current === 'following' ? '' : 'following'))}>
               <p className="text-3xl font-black">{followingCount}</p>
               <p className="text-lg text-white/55">Following</p>
-            </div>
-            <div>
+            </button>
+            <button type="button" onClick={() => setActiveSocialList((current) => (current === 'followers' ? '' : 'followers'))}>
               <p className="text-3xl font-black">{followersCount}</p>
               <p className="text-lg text-white/55">Followers</p>
-            </div>
+            </button>
             <div>
               <p className="text-3xl font-black">{totalLikes}</p>
               <p className="text-lg text-white/55">Likes</p>
             </div>
           </div>
           {profile?.bio ? <p className="mt-5 text-xl">{profile.bio}</p> : <p className="mt-5 text-base text-white/45">No bio yet.</p>}
+          {activeSocialList === 'following' && (
+            <SocialAccountList title="Following" entries={following} idKey="following_id" emptyMessage="Not following anyone yet." />
+          )}
+          {activeSocialList === 'followers' && (
+            <SocialAccountList title="Followers" entries={followers} idKey="follower_id" emptyMessage="No followers yet." />
+          )}
         </div>
         <VideoGrid videos={videos} />
       </section>
@@ -188,8 +225,8 @@ export default function PublicProfilePage() {
         </div>
         <div className="flex gap-6 text-sm">
           <p><span className="font-bold">{videos.length}</span> posts</p>
-          <p><span className="font-bold">{followersCount}</span> followers</p>
-          <p><span className="font-bold">{followingCount}</span> following</p>
+          <button type="button" onClick={() => setActiveSocialList('followers')}><span className="font-bold">{followersCount}</span> followers</button>
+          <button type="button" onClick={() => setActiveSocialList('following')}><span className="font-bold">{followingCount}</span> following</button>
         </div>
       </section>
 
@@ -199,9 +236,9 @@ export default function PublicProfilePage() {
           <div className="space-y-2">
             {followers.length === 0 && <p className="text-sm theme-muted">No followers yet.</p>}
             {followers.slice(0, 8).map((entry) => (
-              <p key={entry.follower_id} className="text-sm theme-muted">
+              <Link key={entry.follower_id} to={`/u/${entry.profiles?.username || 'user'}`} className="block text-sm theme-muted hover:text-current">
                 @{entry.profiles?.username || 'user'} · {entry.profiles?.display_name || 'HoloStem user'}
-              </p>
+              </Link>
             ))}
           </div>
         </div>
@@ -210,9 +247,9 @@ export default function PublicProfilePage() {
           <div className="space-y-2">
             {following.length === 0 && <p className="text-sm theme-muted">Not following anyone yet.</p>}
             {following.slice(0, 8).map((entry) => (
-              <p key={entry.following_id} className="text-sm theme-muted">
+              <Link key={entry.following_id} to={`/u/${entry.profiles?.username || 'user'}`} className="block text-sm theme-muted hover:text-current">
                 @{entry.profiles?.username || 'user'} · {entry.profiles?.display_name || 'HoloStem user'}
-              </p>
+              </Link>
             ))}
           </div>
         </div>
