@@ -51,7 +51,7 @@ Open `http://localhost:5173`.
 
 1. Create a Supabase project.
 2. Copy your project URL + anon key into `.env`.
-3. Run SQL in `supabase/schema.sql` using the Supabase SQL editor.
+3. Run `supabase/001_holostem_schema.sql` in the Supabase SQL editor, then optionally run `supabase/002_storage_policies.sql` if you use the public `videos` storage bucket.
 4. In Supabase Auth settings, allow email/password login.
 
 ### Required env vars
@@ -62,7 +62,7 @@ VITE_SUPABASE_ANON_KEY=...
 VITE_AUTH_REDIRECT_URL=https://your-vercel-domain.vercel.app/auth
 ```
 
-> Upload troubleshooting: if uploads fail but the `videos` bucket exists, re-run the storage section of `supabase/schema.sql` so `storage.objects` policies allow authenticated users to upload into paths prefixed with their user ID (for example `USER_UUID/filename.mp4`).
+> Upload troubleshooting: if uploads fail but the `videos` bucket exists, re-run `supabase/002_storage_policies.sql` so `storage.objects` policies allow authenticated users to upload into paths prefixed with their user ID (for example `USER_UUID/filename.mp4`).
 
 ### Important: fix auth redirect going to localhost
 
@@ -78,14 +78,18 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
 
 ## 3) Database schema
 
-`supabase/schema.sql` creates:
+`supabase/001_holostem_schema.sql` creates/updates:
 
 - `profiles`
 - `contents`
 - `user_progress`
 - `user_views`
+- `liked_videos` and `comments`
+- `user_follows`
+- `reports` and `user_moderation`
+- content pinning fields (`is_pinned`, `pinned_at`) and cached counts
 
-And includes starter content rows for quick testing.
+It also includes starter content rows for quick testing. `supabase/002_storage_policies.sql` creates the optional public `videos` storage bucket and upload policies.
 
 ---
 
