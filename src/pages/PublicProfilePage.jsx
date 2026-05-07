@@ -48,7 +48,7 @@ function VideoGrid({ videos }) {
                 {video.title}
               </div>
             )}
-            {index === 0 && <span className="absolute left-0 top-3 bg-rose-600 px-2 py-0.5 text-xs font-black">Pinned</span>}
+            {index === 0 && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
             <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
           </Link>
         )
@@ -136,7 +136,7 @@ export default function PublicProfilePage() {
               <button
                 onClick={handleFollowToggle}
                 disabled={!user?.id || !profileUserId}
-                className={`rounded-full px-4 py-1.5 text-base font-bold ${isFollowing ? 'bg-white/15 text-white' : 'bg-rose-500 text-white'} disabled:opacity-50`}
+                className={`rounded-full px-4 py-1.5 text-base font-bold ${isFollowing ? 'bg-white/15 text-white' : 'bg-[var(--brand-olive)] text-white'} disabled:opacity-50`}
               >
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
@@ -169,7 +169,7 @@ export default function PublicProfilePage() {
               <PublicProfileAvatar profile={profile} username={username} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-pink-600">@{username}</h1>
+              <h1 className="text-3xl font-bold text-[var(--brand-olive)]">@{username}</h1>
               <p className="theme-muted">{profile?.display_name || 'HoloStem creator'}</p>
               <p className="text-sm theme-muted">{profile?.bio || 'No bio yet.'}</p>
             </div>
@@ -179,7 +179,7 @@ export default function PublicProfilePage() {
               onClick={handleFollowToggle}
               disabled={!user?.id || !profileUserId}
               className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                isFollowing ? 'bg-black/15 text-current' : 'bg-pink-600 text-white'
+                isFollowing ? 'bg-black/15 text-current' : 'bg-[var(--brand-olive)] text-white'
               } disabled:opacity-50`}
             >
               {isFollowing ? 'Following' : 'Follow'}

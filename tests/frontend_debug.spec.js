@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 
 test('Frontend verification', async ({ page }) => {
   await page.goto('http://localhost:5173/dashboard');
@@ -11,7 +11,7 @@ test('Frontend verification', async ({ page }) => {
       innerText: el.innerText
     }));
   });
-  // console.log(elements);
+  console.log(`Inspected ${elements.length} DOM elements`);
 
   await page.waitForSelector('nav');
   await page.screenshot({ path: 'screenshot_dashboard.png' });

@@ -37,6 +37,7 @@ test('Verify Likes and Comments functionality', async ({ page }) => {
   const commentButton = page.locator('button[aria-label="Comments"]').first();
   const initialCommentCountText = await commentButton.locator('span.font-semibold').innerText();
   const initialCommentCount = parseInt(initialCommentCountText) || 0;
+  console.log(`Initial comment count: ${initialCommentCount}`);
 
   await commentButton.click();
 

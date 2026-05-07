@@ -89,7 +89,7 @@ function SuggestedAccounts() {
                     className="h-10 w-10 rounded-full object-cover bg-black/20"
                   />
                 ) : (
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-lg font-bold text-pink-600">
+                  <span className="brand-avatar flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold">
                     {(account.display_name || account.username || '?')[0].toUpperCase()}
                   </span>
                 )}
@@ -105,8 +105,8 @@ function SuggestedAccounts() {
                   onClick={() => handleToggleFollow(account.id)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
                     followingMap[account.id]
-                      ? 'bg-black/15 text-current'
-                      : 'bg-pink-500 text-white'
+                      ? 'brand-button-soft text-current'
+                      : 'brand-button'
                   }`}
                 >
                   {followingMap[account.id] ? 'Following' : 'Follow'}
@@ -156,7 +156,7 @@ export default function AppShell() {
     <div className="theme-app-bg min-h-screen">
       <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 lg:grid-cols-[280px_1fr_120px]">
         <aside className="theme-panel hidden border-r p-4 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-auto">
-          <Link to="/dashboard" className="text-4xl font-black tracking-tight">
+          <Link to="/dashboard" className="brand-wordmark text-4xl font-black tracking-tight">
             HoloStem
           </Link>
           <form className="mt-4" onSubmit={handleSearchSubmit}>
@@ -176,12 +176,14 @@ export default function AppShell() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) => {
+                  const itemPath = item.to.split('?')[0]
                   const itemSearch = item.to.split('?')[1] || ''
                   const itemTab = new URLSearchParams(itemSearch).get('tab') || 'for-you'
-                  const activeByQuery = location.pathname === '/dashboard' && currentTab === itemTab
-                  const active = isActive || activeByQuery
+                  const active = itemPath === '/dashboard'
+                    ? location.pathname === '/dashboard' && currentTab === itemTab
+                    : isActive
                   return `flex items-center gap-3 rounded-lg px-3 py-2 text-lg font-semibold transition ${
-                    active ? 'bg-pink-500/15 text-pink-500' : 'hover:bg-black/10'
+                    active ? 'brand-button-soft brand-accent-text' : 'hover:bg-[rgba(227,232,191,0.08)]'
                   }`
                 }}
               >
@@ -194,14 +196,14 @@ export default function AppShell() {
           {user ? (
             <button
               onClick={handleSignOut}
-              className="mt-4 w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
+              className="brand-outline mt-4 w-full rounded-lg border px-3 py-2 text-left text-sm hover:bg-[rgba(227,232,191,0.08)]"
             >
               Logout {user?.email ? `(${user.email})` : ''}
             </button>
           ) : (
             <NavLink
               to="/auth"
-              className="mt-4 block w-full rounded-lg border border-black/10 px-3 py-2 text-left text-sm hover:bg-black/10"
+              className="brand-outline mt-4 block w-full rounded-lg border px-3 py-2 text-left text-sm hover:bg-[rgba(227,232,191,0.08)]"
             >
               Login / Sign up
             </NavLink>
@@ -211,24 +213,24 @@ export default function AppShell() {
         </aside>
 
         <main className="pb-20 lg:pb-0">
-          <section className={`mobile-shell-top fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between px-4 text-white lg:hidden ${location.pathname === '/dashboard' && currentTab === 'for-you' ? 'bg-transparent' : 'bg-black'}`}>
+          <section className={`mobile-shell-top fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between px-4 text-[var(--brand-cream)] lg:hidden ${location.pathname === '/dashboard' && currentTab === 'for-you' ? 'bg-transparent' : 'bg-[var(--brand-black)]'}`}>
             {location.pathname === '/dashboard' && currentTab === 'activity' ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Inbox</h1>
             ) : location.pathname === '/dashboard' && currentTab === 'following' ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Following</h1>
             ) : location.pathname === '/dashboard' ? (
-              <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-white/65 drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
-                <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-white' : ''}>Explore</Link>
-                <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-white' : ''}>Following</Link>
-                <Link to="/dashboard" className={`relative ${currentTab === 'for-you' ? 'text-white' : ''}`}>
+              <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-[rgba(227,232,191,0.65)] drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
+                <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-[var(--brand-cream)]' : ''}>Explore</Link>
+                <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-[var(--brand-cream)]' : ''}>Following</Link>
+                <Link to="/dashboard" className={`relative ${currentTab === 'for-you' ? 'text-[var(--brand-cream)]' : ''}`}>
                   For You
-                  {currentTab === 'for-you' && <span className="absolute -bottom-3 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-white" />}
+                  {currentTab === 'for-you' && <span className="absolute -bottom-3 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-[var(--brand-cream)]" />}
                 </Link>
               </div>
             ) : location.pathname === '/profile' || location.pathname.startsWith('/u/') ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Profile</h1>
             ) : (
-              <Link to="/dashboard" className="text-2xl font-black tracking-tight">HoloStem</Link>
+              <Link to="/dashboard" className="brand-wordmark text-2xl font-black tracking-tight">HoloStem</Link>
             )}
             {location.pathname === '/dashboard' && (
               <button
@@ -236,7 +238,7 @@ export default function AppShell() {
                 onClick={() => setMobileMenuOpen((open) => !open)}
                 aria-expanded={mobileMenuOpen}
                 aria-controls="mobile-search-panel"
-                className="absolute right-3 top-4 text-2xl leading-none text-white"
+                className="absolute right-3 top-4 text-2xl leading-none text-[var(--brand-cream)]"
               >
                 ⌕
               </button>
@@ -245,14 +247,14 @@ export default function AppShell() {
               <form
                 id="mobile-search-panel"
                 onSubmit={(event) => { handleSearchSubmit(event); setMobileMenuOpen(false) }}
-                className="absolute left-3 right-3 top-16 rounded-2xl bg-zinc-950/95 p-3 shadow-2xl"
+                className="absolute left-3 right-3 top-16 rounded-2xl bg-[rgba(18,24,13,0.97)] p-3 shadow-2xl"
               >
                 <label className="sr-only" htmlFor="app-search-mobile">Search videos</label>
                 <input
                   id="app-search-mobile"
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
-                  className="w-full rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/50"
+                  className="w-full rounded-full border border-[rgba(227,232,191,0.16)] bg-[rgba(227,232,191,0.10)] px-4 py-2 text-sm text-[var(--brand-cream)] placeholder:text-[rgba(227,232,191,0.5)]"
                   placeholder="Search videos"
                   type="search"
                 />
@@ -263,7 +265,7 @@ export default function AppShell() {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-black px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 text-white lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgba(227,232,191,0.16)] bg-[var(--brand-black)] px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 text-[var(--brand-cream)] lg:hidden">
         <ul className="grid grid-cols-5 items-end gap-1">
           {mobileNavItems.map((item) => {
             const itemSearch = item.to.split('?')[1] || ''
@@ -278,11 +280,11 @@ export default function AppShell() {
                 <NavLink
                   to={item.to}
                   className={`flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[11px] font-bold ${
-                    active ? 'text-white' : 'text-white/55'
+                    active ? 'text-[var(--brand-cream)]' : 'text-[rgba(227,232,191,0.55)]'
                   }`}
                 >
                   {item.label === 'Create' ? (
-                    <span className="relative mb-0.5 grid h-8 w-12 place-items-center rounded-xl bg-white text-3xl font-black leading-none text-black shadow-[-7px_0_0_#25f4ee,7px_0_0_#fe2c55]">+</span>
+                    <span className="brand-plus relative mb-0.5 grid h-8 w-12 place-items-center rounded-xl text-3xl font-black leading-none">+</span>
                   ) : (
                     <span className="text-3xl leading-none">{item.icon}</span>
                   )}

@@ -5,12 +5,19 @@ export default {
     extend: {
       colors: {
         neon: {
-          cyan: '#52f4ff',
-          violet: '#8b5cf6',
+          cyan: '#e3e8bf',
+          violet: '#6d7950',
+        },
+        brand: {
+          black: '#050704',
+          olive: '#3e4b2f',
+          leaf: '#52613a',
+          sage: '#b8c49a',
+          cream: '#e3e8bf',
         },
       },
       boxShadow: {
-        glow: '0 0 30px rgba(82, 244, 255, 0.22)',
+        glow: '0 0 30px rgba(227, 232, 191, 0.22)',
       },
       animation: {
         'pulse-soft': 'pulseSoft 3s ease-in-out infinite',

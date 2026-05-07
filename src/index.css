@@ -4,13 +4,21 @@
 
 :root {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  --app-bg: #0b1220;
-  --app-panel: #111a2b;
-  --app-card: #162033;
-  --app-text: #e5edf7;
-  --app-muted: #94a3b8;
-  --app-border: rgba(148, 163, 184, 0.25);
-  --app-input: #1e293b;
+  --brand-black: #050704;
+  --brand-olive: #3e4b2f;
+  --brand-leaf: #52613a;
+  --brand-moss: #6d7950;
+  --brand-sage: #b8c49a;
+  --brand-cream: #e3e8bf;
+  --brand-cream-rgb: 227 232 191;
+  --brand-danger: #8b3f2f;
+  --app-bg: var(--brand-black);
+  --app-panel: #12180d;
+  --app-card: #1a2112;
+  --app-text: var(--brand-cream);
+  --app-muted: #b8c49a;
+  --app-border: rgba(var(--brand-cream-rgb), 0.2);
+  --app-input: #242d19;
 }
 
 body {
@@ -25,13 +33,13 @@ body {
 }
 
 .light body {
-  --app-bg: #f3f4f6;
-  --app-panel: #ffffff;
-  --app-card: #ffffff;
-  --app-text: #131313;
-  --app-muted: #475569;
-  --app-border: rgba(15, 23, 42, 0.12);
-  --app-input: #f1f5f9;
+  --app-bg: #f1f3d8;
+  --app-panel: #fbfce9;
+  --app-card: #fffff1;
+  --app-text: #243019;
+  --app-muted: #52613a;
+  --app-border: rgba(62, 75, 47, 0.22);
+  --app-input: #eef2cf;
 }
 
 .simple-mode .simple-mode-hidden {
@@ -63,4 +71,76 @@ body {
   background: var(--app-input);
   border-color: var(--app-border);
   color: var(--app-text);
+}
+
+
+.brand-wordmark {
+  color: var(--brand-cream);
+  text-shadow: 0 0 24px rgba(var(--brand-cream-rgb), 0.14);
+}
+
+.light .brand-wordmark {
+  color: var(--brand-olive);
+}
+
+.brand-accent-text {
+  color: var(--brand-cream);
+}
+
+.light .brand-accent-text {
+  color: var(--brand-olive);
+}
+
+.brand-button {
+  background: var(--brand-olive);
+  color: var(--brand-cream);
+}
+
+.brand-button:hover {
+  background: var(--brand-leaf);
+}
+
+.brand-button-soft {
+  background: rgba(var(--brand-cream-rgb), 0.12);
+  color: var(--brand-cream);
+}
+
+.brand-outline {
+  border-color: rgba(var(--brand-cream-rgb), 0.26);
+}
+
+.brand-avatar {
+  background: linear-gradient(135deg, var(--brand-olive), var(--brand-sage));
+  color: var(--brand-cream);
+}
+
+.brand-plus {
+  background: var(--brand-cream);
+  color: var(--brand-olive);
+  box-shadow: -7px 0 0 var(--brand-leaf), 7px 0 0 var(--brand-sage);
+}
+
+.brand-spinner {
+  border-color: var(--brand-sage);
+  border-top-color: transparent;
+}
+
+.brand-surface-mobile {
+  background: var(--brand-black);
+  color: var(--brand-cream);
+}
+
+.brand-activity-icon {
+  background: var(--brand-olive);
+  color: var(--brand-cream);
+}
+
+.brand-activity-icon-alt {
+  background: var(--brand-leaf);
+  color: var(--brand-cream);
+}
+
+.brand-error {
+  background: rgba(139, 63, 47, 0.18);
+  color: #f2d2c8;
 }

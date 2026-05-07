@@ -48,7 +48,7 @@ export default function AuthPage() {
           </p>
         )}
         {location.state?.from && (
-          <p className="mb-3 rounded-md bg-sky-500/15 p-2 text-xs text-sky-200">
+          <p className="mb-3 rounded-md bg-[rgba(82,97,58,0.18)] p-2 text-xs text-[var(--brand-cream)]">
             You can browse without logging in. Login is required for: {location.state.from}.
           </p>
         )}

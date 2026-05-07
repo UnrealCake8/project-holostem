@@ -97,7 +97,7 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center text-center">
           <div className="relative h-20 w-20 rounded-full border border-white/20 bg-[#151a17]">
             <ProfileAvatar profile={profile} />
-            <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-sky-400 text-2xl font-black text-white">+</span>
+            <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-[var(--brand-leaf)] text-2xl font-black text-white">+</span>
           </div>
           <div className="mt-4 flex max-w-full items-center justify-center gap-2">
             <span className="text-xl">▣</span>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
         {videos.length === 0 ? (
           <div className="border-t border-white/10 py-12 text-center text-white/50">
             <p className="text-lg font-semibold">No posts yet</p>
-            <Link to="/upload" className="mt-3 inline-block rounded-full bg-rose-500 px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
+            <Link to="/upload" className="mt-3 inline-block rounded-full bg-[var(--brand-olive)] px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-px bg-black">
@@ -146,7 +146,7 @@ export default function ProfilePage() {
                       {video.title}
                     </div>
                   )}
-                  {index === 0 && <span className="absolute left-0 top-3 bg-rose-600 px-2 py-0.5 text-xs font-black">Pinned</span>}
+                  {index === 0 && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
                   <span className="absolute right-2 top-2 rounded-md bg-white text-white">▢</span>
                   <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
                 </Link>

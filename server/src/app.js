@@ -29,6 +29,7 @@ app.use('/api/users', usersRoutes)
 app.use('/api/videos', videosRoutes)
 
 app.use((error, _req, res, _next) => {
+  void _next
   console.error(error)
 
   const status = Number(error?.status || error?.statusCode || 500)

@@ -51,7 +51,7 @@ export default function UploadPage() {
         throw new Error('Set a username in Profile before publishing.')
       }
 
-      const created = await createContent({
+      await createContent({
         user_id: user.id,
         title,
         description,
@@ -78,12 +78,12 @@ export default function UploadPage() {
 
   return (
     <div className="theme-app-bg p-4 mx-auto max-w-2xl space-y-4">
-      <h1 className="text-3xl font-bold text-pink-600">Publish video link</h1>
+      <h1 className="text-3xl font-bold text-[var(--brand-olive)]">Publish video link</h1>
       <p className="theme-muted">Share a direct .mp4 link to the HoloStem feed.</p>
       <p className="text-sm theme-muted">
         Want us to do it for you?{' '}
         <a
-          className="font-semibold text-pink-600 underline hover:text-pink-700"
+          className="font-semibold text-[var(--brand-olive)] underline hover:text-[var(--brand-leaf)]"
           href="https://unrealcake8.github.io/project-holostem/uploader.html"
           rel="noreferrer"
           target="_blank"
@@ -129,7 +129,7 @@ export default function UploadPage() {
           placeholder="Optional .vtt caption URL"
           type="url"
         />
-        <button className="rounded-full bg-pink-600 px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={submitting}>
+        <button className="rounded-full bg-[var(--brand-olive)] px-4 py-2 font-semibold text-white disabled:opacity-60" disabled={submitting}>
           {submitting ? 'Publishing...' : 'Add video link'}
         </button>
         {status && <p className="text-sm theme-muted">{status}</p>}

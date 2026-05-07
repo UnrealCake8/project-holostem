@@ -30,7 +30,7 @@ function MiniExperience() {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-cyan-400/25 bg-cyan-500/10 p-4">
+    <div className="space-y-3 rounded-xl border border-[rgba(227,232,191,0.25)] bg-[rgba(227,232,191,0.10)] p-4">
       <h3 className="font-semibold">Mini Experience: Tap challenge</h3>
       <p>Tap as many times as possible in 10 seconds.</p>
       <p className="text-sm text-slate-300">Time left: {timeLeft}s • Score: {score}</p>
@@ -75,7 +75,7 @@ export default function ContentViewerPage() {
         <h1 className="text-2xl font-bold">{content.title}</h1>
         <p className="mt-1 text-slate-300">{content.description}</p>
         {content.username && (
-          <Link to={`/u/${content.username}`} className="mt-2 inline-block text-xs text-cyan-300 hover:underline">
+          <Link to={`/u/${content.username}`} className="mt-2 inline-block text-xs text-[var(--brand-sage)] hover:underline">
             @{content.username}
           </Link>
         )}
