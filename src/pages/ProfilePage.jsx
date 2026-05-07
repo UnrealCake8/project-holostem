@@ -10,6 +10,7 @@ import {
   fetchFollowingForUser,
   fetchVideosByUsername,
   updateContentPin,
+  fetchLikedVideosForUser,
 } from '../lib/contentApi'
 
 function isSupportedAvatarUrl(value) {
@@ -91,7 +92,10 @@ export default function ProfilePage() {
   const [videos, setVideos] = useState([])
   const [videosLoading, setVideosLoading] = useState(true)
   const [videosError, setVideosError] = useState('')
+  const [likedVideos, setLikedVideos] = useState([])
+  const [likedVideosLoading, setLikedVideosLoading] = useState(false)
   const [activeSocialList, setActiveSocialList] = useState('')
+  const [activeTab, setActiveTab] = useState(0)
 
   useEffect(() => {
     async function load() {
@@ -105,6 +109,22 @@ export default function ProfilePage() {
     }
     load()
   }, [user.id, user.user_metadata?.full_name, user.user_metadata?.username])
+
+  useEffect(() => {
+    async function loadLikedVideos() {
+      if (activeTab !== 3 || !user.id) return
+      setLikedVideosLoading(true)
+      try {
+        const items = await fetchLikedVideosForUser(user.id)
+        setLikedVideos(items)
+      } catch (err) {
+        console.error('Failed to load liked videos:', err)
+      } finally {
+        setLikedVideosLoading(false)
+      }
+    }
+    loadLikedVideos()
+  }, [activeTab, user.id])
 
   useEffect(() => {
     async function loadSocialData() {
@@ -123,7 +143,7 @@ export default function ProfilePage() {
   }, [user.id])
 
   useEffect(() => {
-    if (!profile.username && !user.id) return undefined
+    if (!user.id) return undefined
 
     let cancelled = false
     setVideosLoading(true)
@@ -161,6 +181,14 @@ export default function ProfilePage() {
   const displayName = profile.display_name || profile.username || 'Creator'
   const handle = profile.username || user.email?.split('@')[0] || 'user'
   const totalLikes = videos.reduce((sum, video) => sum + Number(video.like_count || 0), 0)
+
+  const tabs = [
+    { icon: '▦', label: 'Posts' },
+    { icon: '▣', label: 'Archive' },
+    { icon: '↕', label: 'Reposts' },
+    { icon: '♡', label: 'Likes' },
+    { icon: '♡', label: 'Saved' },
+  ]
 
   async function handleTogglePin(video) {
     const nextPinned = !video.is_pinned
@@ -212,50 +240,97 @@ export default function ProfilePage() {
           )}
         </div>
         <div className="mt-8 grid grid-cols-5 items-end border-b border-white/20 text-white/55">
-          {['▦', '▣', '↕', '♡', '♡'].map((icon, index) => (
-            <button key={`${icon}-${index}`} className={`pb-3 text-3xl ${index === 0 ? 'border-b-2 border-white text-white' : ''}`}>
-              {icon}
+          {tabs.map((tab, index) => (
+            <button
+              key={`${tab.icon}-${index}`}
+              onClick={() => setActiveTab(index)}
+              className={`pb-3 text-3xl ${activeTab === index ? 'border-b-2 border-white text-white' : ''}`}
+            >
+              {tab.icon}
             </button>
           ))}
         </div>
-        {videosLoading ? (
+
+        {activeTab === 0 && (
+          <>
+            {videosLoading ? (
+              <div className="border-t border-white/10 py-12 text-center text-white/50">
+                <p className="text-lg font-semibold">Loading your posts...</p>
+              </div>
+            ) : videosError ? (
+              <div className="border-t border-white/10 py-12 text-center text-white/50">
+                <p className="mx-auto max-w-xs text-lg font-semibold">{videosError}</p>
+              </div>
+            ) : videos.length === 0 ? (
+              <div className="border-t border-white/10 py-12 text-center text-white/50">
+                <p className="text-lg font-semibold">No posts yet</p>
+                <Link to="/upload" className="mt-3 inline-block rounded-full bg-[var(--brand-olive)] px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-px bg-black">
+                {videos.map((video) => {
+                  const isDirectVideo = video.media_url?.toLowerCase().endsWith('.mp4')
+                  return (
+                    <Link key={video.id} to={`/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
+                      {isDirectVideo ? (
+                        <video src={video.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-black p-2 text-center text-xs font-semibold text-white/70">
+                          {video.title}
+                        </div>
+                      )}
+                      {video.is_pinned && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
+                      <button
+                        type="button"
+                        onClick={(event) => { event.preventDefault(); handleTogglePin(video) }}
+                        className="absolute right-1 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black text-white"
+                      >
+                        {video.is_pinned ? 'Unpin' : 'Pin'}
+                      </button>
+                      <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 3 && (
+          <>
+            {likedVideosLoading ? (
+              <div className="border-t border-white/10 py-12 text-center text-white/50">
+                <p className="text-lg font-semibold">Loading liked videos...</p>
+              </div>
+            ) : likedVideos.length === 0 ? (
+              <div className="border-t border-white/10 py-12 text-center text-white/50">
+                <p className="text-lg font-semibold">No liked videos yet</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-px bg-black">
+                {likedVideos.map((video) => {
+                  const isDirectVideo = video.media_url?.toLowerCase().endsWith('.mp4')
+                  return (
+                    <Link key={video.id} to={`/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
+                      {isDirectVideo ? (
+                        <video src={video.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-black p-2 text-center text-xs font-semibold text-white/70">
+                          {video.title}
+                        </div>
+                      )}
+                      <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {(activeTab === 1 || activeTab === 2 || activeTab === 4) && (
           <div className="border-t border-white/10 py-12 text-center text-white/50">
-            <p className="text-lg font-semibold">Loading your posts...</p>
-          </div>
-        ) : videosError ? (
-          <div className="border-t border-white/10 py-12 text-center text-white/50">
-            <p className="mx-auto max-w-xs text-lg font-semibold">{videosError}</p>
-          </div>
-        ) : videos.length === 0 ? (
-          <div className="border-t border-white/10 py-12 text-center text-white/50">
-            <p className="text-lg font-semibold">No posts yet</p>
-            <Link to="/upload" className="mt-3 inline-block rounded-full bg-[var(--brand-olive)] px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-px bg-black">
-            {videos.map((video) => {
-              const isDirectVideo = video.media_url?.toLowerCase().endsWith('.mp4')
-              return (
-                <Link key={video.id} to={`/video/${video.id}`} className="relative aspect-[9/14] overflow-hidden bg-zinc-900">
-                  {isDirectVideo ? (
-                    <video src={video.media_url} className="h-full w-full object-cover" muted playsInline preload="metadata" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-black p-2 text-center text-xs font-semibold text-white/70">
-                      {video.title}
-                    </div>
-                  )}
-                  {video.is_pinned && <span className="absolute left-0 top-3 bg-[var(--brand-leaf)] px-2 py-0.5 text-xs font-black">Pinned</span>}
-                  <button
-                    type="button"
-                    onClick={(event) => { event.preventDefault(); handleTogglePin(video) }}
-                    className="absolute right-1 top-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black text-white"
-                  >
-                    {video.is_pinned ? 'Unpin' : 'Pin'}
-                  </button>
-                  <span className="absolute bottom-2 left-2 text-xs font-bold drop-shadow">▷ {video.like_count || 0}</span>
-                </Link>
-              )
-            })}
+            <p className="text-lg font-semibold">No {tabs[activeTab].label.toLowerCase()} yet</p>
           </div>
         )}
       </section>

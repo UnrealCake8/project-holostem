@@ -43,7 +43,7 @@ export async function fetchVideosByUsername(username, userId = '') {
   if (userId) {
     query = query
       .eq('user_id', userId)
-      .or('status.is.null,status.not.in.(removed,rejected)')
+      .or('status.eq.published,status.is.null')
   } else {
     query = query
       .eq('username', username)
@@ -121,6 +121,17 @@ export async function fetchLikeCount(contentId) {
     return 0
   }
   return count ?? 0
+}
+
+export async function fetchLikedVideosForUser(userId) {
+  if (!hasSupabaseConfig || !userId) return []
+  const { data, error } = await supabase
+    .from('liked_videos')
+    .select('*, contents(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => row.contents).filter(Boolean)
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────

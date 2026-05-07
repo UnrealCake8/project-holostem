@@ -99,9 +99,18 @@ export default function PublicProfilePage() {
   const [followers, setFollowers] = useState([])
   const [following, setFollowing] = useState([])
   const [activeSocialList, setActiveSocialList] = useState('')
+  const [activeTab, setActiveTab] = useState(0)
   const isSelf = Boolean(user?.id && profileUserId && user.id === profileUserId)
   const totalLikes = videos.reduce((sum, video) => sum + Number(video.like_count || 0), 0)
   const displayName = profile?.display_name || username || 'Creator'
+
+  const tabs = [
+    { icon: '▦', label: 'Posts' },
+    { icon: '▣', label: 'Archive' },
+    { icon: '↕', label: 'Reposts' },
+    { icon: '♡', label: 'Likes' },
+    { icon: '♡', label: 'Saved' },
+  ]
 
   useEffect(() => {
     async function load() {
@@ -196,7 +205,26 @@ export default function PublicProfilePage() {
             <SocialAccountList title="Followers" entries={followers} idKey="follower_id" emptyMessage="No followers yet." />
           )}
         </div>
-        <VideoGrid videos={videos} />
+
+        <div className="mt-8 grid grid-cols-5 items-end border-b border-white/20 text-white/55">
+          {tabs.map((tab, index) => (
+            <button
+              key={`${tab.icon}-${index}`}
+              onClick={() => setActiveTab(index)}
+              className={`pb-3 text-3xl ${activeTab === index ? 'border-b-2 border-white text-white' : ''}`}
+            >
+              {tab.icon}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 0 ? (
+          <VideoGrid videos={videos} />
+        ) : (
+          <div className="border-t border-white/10 py-12 text-center text-white/50">
+            <p className="text-lg font-semibold">No {tabs[activeTab].label.toLowerCase()} yet</p>
+          </div>
+        )}
       </section>
 
       <section className="theme-card hidden rounded-2xl border p-4 space-y-3 lg:block">
