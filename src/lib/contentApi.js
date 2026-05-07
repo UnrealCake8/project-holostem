@@ -294,6 +294,7 @@ export async function fetchProfileAvatarsByUserIds(userIds = []) {
   }, {})
 }
 
+
 // ─── Following / Followers ───────────────────────────────────────────────────
 
 export async function fetchFollowStatus(followerId, followingId) {
@@ -359,56 +360,49 @@ export async function fetchFollowersForUser(userId) {
   if (!hasSupabaseConfig || !userId) return []
   const { data, error } = await supabase
     .from('user_follows')
-    .select(`
-      follower_id,
-      profiles!user_follows_follower_id_fkey (
-        username,
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('follower_id, created_at')
     .eq('following_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data ?? []
+
+  const profileMap = await fetchProfilesByIds((data ?? []).map((row) => row.follower_id))
+  return (data ?? []).map((row) => ({
+    ...row,
+    profiles: profileMap[row.follower_id] ?? null,
+  }))
 }
 
 export async function fetchFollowingForUser(userId) {
   if (!hasSupabaseConfig || !userId) return []
   const { data, error } = await supabase
     .from('user_follows')
-    .select(`
-      following_id,
-      profiles!user_follows_following_id_fkey (
-        username,
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('following_id, created_at')
     .eq('follower_id', userId)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data ?? []
+
+  const profileMap = await fetchProfilesByIds((data ?? []).map((row) => row.following_id))
+  return (data ?? []).map((row) => ({
+    ...row,
+    profiles: profileMap[row.following_id] ?? null,
+  }))
 }
 
 export async function fetchFollowNotifications(userId) {
   if (!hasSupabaseConfig || !userId) return []
   const { data, error } = await supabase
     .from('user_follows')
-    .select(`
-      follower_id,
-      created_at,
-      profiles!user_follows_follower_id_fkey (
-        username,
-        display_name,
-        avatar_url
-      )
-    `)
+    .select('follower_id, created_at')
     .eq('following_id', userId)
     .order('created_at', { ascending: false })
     .limit(30)
   if (error) throw error
-  return data ?? []
+
+  const profileMap = await fetchProfilesByIds((data ?? []).map((row) => row.follower_id))
+  return (data ?? []).map((row) => ({
+    ...row,
+    profiles: profileMap[row.follower_id] ?? null,
+  }))
 }
 
 // ─── Content Creation ─────────────────────────────────────────────────────────
@@ -470,8 +464,11 @@ export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
 
 export async function fetchProfilesByIds(userIds = []) {
   const ids = [...new Set((userIds || []).filter(Boolean))]
-  if (!ids.length) return {}
-  const { data, error } = await supabase.from('profiles').select('id,username,display_name,email,role').in('id', ids)
+  if (!hasSupabaseConfig || !ids.length) return {}
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url, email, role')
+    .in('id', ids)
   if (error) throw error
   return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }

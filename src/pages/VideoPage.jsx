@@ -21,7 +21,7 @@ function VideoPlayer({ item }) {
 
   if (item.type === 'mini') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-black text-white">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[var(--brand-olive)] to-[var(--brand-black)] text-white">
         <div className="text-6xl mb-4">🎮</div>
         <p className="text-2xl font-bold">Mini Experience</p>
       </div>
@@ -167,7 +167,7 @@ export default function VideoPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-black">
-        <div className="h-10 w-10 rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
+        <div className="h-10 w-10 rounded-full border-4 border-[var(--brand-sage)] border-t-transparent animate-spin" />
       </div>
     )
   }
@@ -176,7 +176,7 @@ export default function VideoPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-black text-white gap-4">
         <p className="text-xl">Video not found.</p>
-        <Link to="/dashboard" className="text-pink-400 underline">Back to feed</Link>
+        <Link to="/dashboard" className="text-[var(--brand-sage)] underline">Back to feed</Link>
       </div>
     )
   }
@@ -222,7 +222,7 @@ export default function VideoPage() {
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
-                <span className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-xs font-bold">
+                <span className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--brand-olive)] to-[var(--brand-sage)] flex items-center justify-center text-xs font-bold">
                   {item.username[0].toUpperCase()}
                 </span>
               )}
@@ -275,7 +275,7 @@ export default function VideoPage() {
             )}
             {comments.map((c) => (
               <div key={c.id} className="flex gap-3 items-start">
-                <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-[var(--brand-olive)] to-[var(--brand-sage)] flex items-center justify-center text-white text-xs font-bold">
                   {(c.username || '?')[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -312,14 +312,14 @@ export default function VideoPage() {
                   <button
                     type="submit"
                     disabled={posting || !body.trim()}
-                    className="rounded-full bg-pink-500 px-4 py-2 text-white text-sm font-semibold disabled:opacity-40"
+                    className="rounded-full bg-[var(--brand-olive)] px-4 py-2 text-white text-sm font-semibold disabled:opacity-40"
                   >
                     Post
                   </button>
                 </form>
               ) : (
                 <p className="text-white/40 text-sm text-center">
-                  <Link to="/auth" className="text-pink-400 underline">Log in</Link> to comment
+                  <Link to="/auth" className="text-[var(--brand-sage)] underline">Log in</Link> to comment
                 </p>
               )}
             </div>

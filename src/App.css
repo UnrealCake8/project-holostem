@@ -8,16 +8,16 @@
 }
 
 .card {
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
+  background: var(--app-card);
+  border: 1px solid rgba(62, 75, 47, 0.22);
   border-radius: 16px;
   padding: 1.1rem;
-  box-shadow: 0 8px 26px rgba(6, 27, 45, 0.06);
+  box-shadow: 0 8px 26px rgba(5, 7, 4, 0.12);
 }
 
 .hero {
-  background: linear-gradient(140deg, #0f4a63 0%, #176585 100%);
-  color: #f8fbff;
+  background: linear-gradient(140deg, var(--brand-olive) 0%, var(--brand-leaf) 100%);
+  color: var(--brand-cream);
 }
 
 .eyebrow {
@@ -40,23 +40,23 @@ h1 {
 
 h2 {
   font-size: clamp(1.05rem, 2vw, 1.45rem);
-  color: #0f4a63;
+  color: var(--brand-olive);
 }
 
 h3 {
   font-size: 1rem;
-  color: #113d52;
+  color: var(--brand-leaf);
 }
 
 p,
 li {
   margin: 0;
   line-height: 1.5;
-  color: #1e293b;
+  color: var(--app-text);
 }
 
 .hero p {
-  color: #f8fbff;
+  color: var(--brand-cream);
 }
 
 ul {
@@ -73,8 +73,8 @@ ul {
 }
 
 .pillar {
-  border: 1px solid #d6e5ef;
-  background: #f8fcff;
+  border: 1px solid rgba(62, 75, 47, 0.24);
+  background: var(--app-panel);
   border-radius: 12px;
   padding: 0.8rem;
 }
@@ -92,17 +92,17 @@ ul {
 }
 
 .chip {
-  background: #eef4fa;
-  color: #1f3344;
-  border: 1px solid #d3e1ed;
+  background: rgba(184, 196, 154, 0.18);
+  color: var(--app-text);
+  border: 1px solid rgba(62, 75, 47, 0.22);
   border-radius: 999px;
   padding: 0.35rem 0.68rem;
   font-size: 0.9rem;
 }
 
 .chip-accent {
-  background: #dafbe6;
-  border-color: #8be0a8;
+  background: rgba(227, 232, 191, 0.24);
+  border-color: var(--brand-sage);
 }
 
 @media (min-width: 860px) {

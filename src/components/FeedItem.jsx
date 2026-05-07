@@ -70,7 +70,7 @@ function FeedPlayer({ item, isActive, isPaused, settings }) {
 
   if (item.type === 'mini') {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-black text-white">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[var(--brand-olive)] to-[var(--brand-black)] text-white">
         <div className="text-6xl mb-4">🎮</div>
         <p className="text-2xl font-bold">Mini Experience</p>
         <p className="mt-2 max-w-xs text-center text-white/70 text-base">
@@ -236,7 +236,7 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted, onRep
           )}
           {comments.map((c) => (
             <div key={c.id} className="flex gap-3 items-start">
-              <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+              <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gradient-to-br from-[var(--brand-olive)] to-[var(--brand-sage)] flex items-center justify-center text-white text-xs font-bold">
                 {(c.user_handle || '?')[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
@@ -276,14 +276,14 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted, onRep
               <button
                 type="submit"
                 disabled={posting || !body.trim()}
-                className="rounded-full bg-pink-500 px-4 py-2 text-white text-sm font-semibold disabled:opacity-40"
+                className="rounded-full bg-[var(--brand-olive)] px-4 py-2 text-white text-sm font-semibold disabled:opacity-40"
               >
                 Post
               </button>
             </>
           ) : (
             <p className="text-white/40 text-sm w-full text-center py-1">
-              <Link to="/auth" className="text-pink-400 underline">Log in</Link> to comment
+              <Link to="/auth" className="text-[var(--brand-sage)] underline">Log in</Link> to comment
             </p>
           )}
         </form>
@@ -297,7 +297,7 @@ function CommentsDrawer({ item, onClose, onCommentAdded, onCommentDeleted, onRep
             <textarea value={reportDetails} onChange={(e)=>setReportDetails(e.target.value)} placeholder="Optional details" className="mt-2 w-full rounded bg-white/10 px-2 py-2 text-sm text-white"/>
             <div className="mt-3 flex gap-2">
               <button className="flex-1 rounded border border-white/30 py-2 text-sm" onClick={() => setReportingComment(null)}>Cancel</button>
-              <button className="flex-1 rounded bg-pink-600 py-2 text-sm font-semibold" onClick={async () => { await onReportComment?.(reportingComment.id, reportingComment.user_id, reportReason, reportDetails); setReportingComment(null); setReportDetails('') }}>Submit report</button>
+              <button className="flex-1 rounded bg-[var(--brand-olive)] py-2 text-sm font-semibold" onClick={async () => { await onReportComment?.(reportingComment.id, reportingComment.user_id, reportReason, reportDetails); setReportingComment(null); setReportDetails('') }}>Submit report</button>
             </div>
           </div>
         </div>
@@ -495,7 +495,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                     className="h-7 w-7 shrink-0 rounded-full border border-white/30 object-cover lg:h-8 lg:w-8"
                   />
                 ) : (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-pink-400 to-purple-600 text-xs font-bold lg:h-8 lg:w-8">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-[var(--brand-olive)] to-[var(--brand-sage)] text-xs font-bold lg:h-8 lg:w-8">
                     {item.username[0].toUpperCase()}
                   </span>
                 )}
@@ -516,7 +516,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
               </span>
               <Link
                 to={`/video/${item.id}`}
-                className="inline-block rounded-full bg-pink-500/80 backdrop-blur px-2.5 py-0.5 text-xs font-semibold hover:bg-pink-500"
+                className="inline-block rounded-full bg-[rgba(62,75,47,0.85)] backdrop-blur px-2.5 py-0.5 text-xs font-semibold hover:bg-[var(--brand-leaf)]"
               >
                 View page ↗
               </Link>
@@ -536,7 +536,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                   className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-lg lg:h-12 lg:w-12"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-pink-400 to-purple-600 text-base font-bold text-white shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-[var(--brand-olive)] to-[var(--brand-sage)] text-base font-bold text-white shadow-lg">
                   {(item?.username || '?')[0].toUpperCase()}
                 </div>
               )}
@@ -547,7 +547,7 @@ export default function FeedItem({ item, isActive, onDeleted }) {
                 className={`absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[0] font-bold after:text-2xl after:content-['+'] lg:-bottom-3 lg:text-[10px] lg:after:content-[''] ${
                   isFollowing
                     ? 'bg-white text-black border-white'
-                    : 'bg-pink-500 text-white border-white'
+                    : 'bg-[var(--brand-olive)] text-white border-white'
                 }`}
               >
                 {isFollowing ? 'Following' : 'Follow'}

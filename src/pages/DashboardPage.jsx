@@ -73,7 +73,7 @@ function MindfulModal({
         <p className="mt-1 text-sm theme-muted">{body}</p>
         <div className="mt-4 grid gap-2">
           <button className="rounded-full bg-white/10 px-4 py-2 text-sm" onClick={onTakeBreak}>Take a short break</button>
-          <button className="rounded-full bg-pink-600 px-4 py-2 text-sm font-semibold text-white" onClick={handleConfirmContinue}>
+          <button className="rounded-full brand-button px-4 py-2 text-sm font-semibold" onClick={handleConfirmContinue}>
             {confirming
               ? countdown > 0
                 ? `Breathe ${countdown}s to continue`
@@ -114,7 +114,7 @@ function UsageOnboarding({ onSave }) {
           </select>
         </label>
         <button
-          className="mt-4 w-full rounded-full bg-pink-600 px-4 py-2 font-semibold text-white"
+          className="mt-4 w-full rounded-full brand-button px-4 py-2 font-semibold"
           onClick={() => onSave({ onboarded: true, dailyLimitMinutes, videosPerSession })}
         >
           Start with mindful defaults
@@ -324,8 +324,8 @@ export default function DashboardPage() {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 rounded-full border-4 border-pink-500 border-t-transparent animate-spin" />
-          <p className="text-white/60 text-sm">Loading feed…</p>
+          <div className="h-10 w-10 rounded-full border-4 brand-spinner animate-spin" />
+          <p className="text-[rgba(227,232,191,0.62)] text-sm">Loading feed…</p>
         </div>
       </div>
     )
@@ -365,9 +365,9 @@ export default function DashboardPage() {
     return (
       <div className="theme-app-bg mx-auto max-w-2xl p-4 pt-20 lg:p-4">
         <section className="hidden theme-card rounded-2xl border p-4 lg:block">
-          <h1 className="text-2xl font-bold text-pink-600">Activity</h1>
+          <h1 className="brand-accent-text text-2xl font-bold">Activity</h1>
           <p className="mt-1 text-sm theme-muted">Recent follows</p>
-          {loadError && <p className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-200">{loadError}</p>}
+          {loadError && <p className="mt-3 rounded-xl brand-error p-3 text-sm">{loadError}</p>}
           <div className="mt-4 space-y-3">
             {notifications.length === 0 && (
               <p className="text-sm theme-muted">No one has followed you yet.</p>
@@ -391,8 +391,8 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="-mx-4 -mt-20 min-h-screen bg-black pb-28 pt-20 text-white lg:hidden">
-          {loadError && <p className="mx-4 mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-100">{loadError}</p>}
+        <section className="-mx-4 -mt-20 min-h-screen brand-surface-mobile pb-28 pt-20 lg:hidden">
+          {loadError && <p className="mx-4 mb-4 rounded-xl brand-error p-3 text-sm">{loadError}</p>}
           <div className="flex gap-4 overflow-x-auto px-4 pb-5 pt-3" style={{ scrollbarWidth: 'none' }}>
             {storyProfiles.length === 0 ? (
               <div className="py-3 text-sm text-white/45">Follow creators to see their updates here.</div>
@@ -402,13 +402,13 @@ export default function DashboardPage() {
                 to={profile.isCreate ? '/upload' : `/u/${profile.username}`}
                 className="w-20 flex-none text-center"
               >
-                <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-full border-2 border-cyan-400 bg-zinc-900">
+                <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-full border-2 border-[var(--brand-sage)] bg-[var(--brand-olive)]">
                   {profile.avatar_url ? (
                     <img src={profile.avatar_url} alt={profile.username || 'profile'} className="h-full w-full rounded-full object-cover" />
                   ) : (
                     <span className="text-xl font-black text-white/70">{(profile.display_name || profile.username || '?')[0].toUpperCase()}</span>
                   )}
-                  {profile.isCreate && <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-sky-400 text-xl font-black">+</span>}
+                  {profile.isCreate && <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full brand-button text-xl font-black">+</span>}
                 </div>
                 <p className="mt-2 truncate text-xs font-bold">{profile.display_name || profile.username}</p>
               </Link>
@@ -422,7 +422,7 @@ export default function DashboardPage() {
                 to={`/dashboard?tab=activity&view=${row.id}`}
                 className={`flex items-center gap-3 rounded-2xl p-2 transition ${activityView === row.id ? 'bg-white/10' : 'hover:bg-white/5'}`}
               >
-                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.id === 'followers' ? 'bg-sky-500' : 'bg-rose-500'} text-2xl`}>{row.icon}</div>
+                <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-full ${row.id === 'followers' ? 'brand-activity-icon' : 'brand-activity-icon-alt'} text-2xl`}>{row.icon}</div>
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-medium">{row.title}</p>
                   <p className="truncate text-base text-white/55">{row.body}</p>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
                   {notification.profiles?.avatar_url ? (
                     <img src={notification.profiles.avatar_url} alt={notification.profiles?.username || 'profile'} className="h-10 w-10 rounded-full object-cover" />
                   ) : (
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-zinc-800 text-sm font-bold">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-[var(--brand-olive)] text-sm font-bold">
                       {(notification.profiles?.display_name || notification.profiles?.username || '?')[0].toUpperCase()}
                     </span>
                   )}
@@ -462,9 +462,9 @@ export default function DashboardPage() {
 
   if (feed.length === 0) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-black text-white gap-4">
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[var(--brand-black)] text-[var(--brand-cream)] gap-4">
         <div className="text-4xl">📭</div>
-        {loadError && <p className="max-w-xs rounded-xl bg-red-500/10 p-3 text-center text-sm text-red-100">{loadError}</p>}
+        {loadError && <p className="max-w-xs rounded-xl brand-error p-3 text-center text-sm">{loadError}</p>}
         <p className="max-w-xs text-center text-xl font-semibold">
           {tab === 'following'
             ? (searchQuery ? 'No matching posts from people you follow yet' : 'No posts from people you follow yet')
@@ -473,11 +473,11 @@ export default function DashboardPage() {
               : (searchQuery ? 'No videos matched your search' : 'No content yet')}
         </p>
         {tab === 'following' || tab === 'explore' ? (
-          <Link to="/dashboard" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
+          <Link to="/dashboard" className="rounded-full brand-button px-6 py-2 font-semibold">
             Browse For You feed
           </Link>
         ) : (
-          <Link to="/upload" className="rounded-full bg-pink-500 px-6 py-2 font-semibold text-white">
+          <Link to="/upload" className="rounded-full brand-button px-6 py-2 font-semibold">
             Upload the first video
           </Link>
         )}
@@ -515,7 +515,7 @@ export default function DashboardPage() {
         ref={containerRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="h-screen overflow-y-scroll snap-y snap-mandatory bg-black"
+        className="h-screen overflow-y-scroll snap-y snap-mandatory bg-[var(--brand-black)]"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
