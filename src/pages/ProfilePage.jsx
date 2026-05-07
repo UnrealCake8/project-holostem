@@ -71,6 +71,15 @@ function ProfileAvatar({ profile }) {
   )
 }
 
+function ProfileBadgeIcon() {
+  return (
+    <svg className="h-5 w-5 shrink-0 text-white/85" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="2" />
+      <rect x="8" y="8" width="8" height="8" rx="1.5" fill="currentColor" opacity="0.55" />
+    </svg>
+  )
+}
+
 export default function ProfilePage() {
   const { user } = useAuth()
   const [profile, setProfile] = useState({ display_name: '', username: '', avatar_url: '', bio: '', age_group: 'all' })
@@ -80,6 +89,8 @@ export default function ProfilePage() {
   const [followers, setFollowers] = useState([])
   const [following, setFollowing] = useState([])
   const [videos, setVideos] = useState([])
+  const [videosLoading, setVideosLoading] = useState(true)
+  const [videosError, setVideosError] = useState('')
   const [activeSocialList, setActiveSocialList] = useState('')
 
   useEffect(() => {
@@ -112,8 +123,29 @@ export default function ProfilePage() {
   }, [user.id])
 
   useEffect(() => {
-    if (!profile.username && !user.id) return
-    fetchVideosByUsername(profile.username, user.id).then((items) => setVideos(sortPinnedVideos(items))).catch(() => setVideos([]))
+    if (!profile.username && !user.id) return undefined
+
+    let cancelled = false
+    setVideosLoading(true)
+    setVideosError('')
+
+    fetchVideosByUsername(profile.username, user.id)
+      .then((items) => {
+        if (!cancelled) setVideos(sortPinnedVideos(items))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setVideos([])
+          setVideosError('We could not load your posts. Pull to refresh or try again in a moment.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setVideosLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [profile.username, user.id])
 
   async function handleSubmit(event) {
@@ -152,7 +184,7 @@ export default function ProfilePage() {
             <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-[var(--brand-leaf)] text-2xl font-black text-white">+</span>
           </div>
           <div className="mt-4 flex max-w-full items-center justify-center gap-2">
-            <span className="text-xl">▣</span>
+            <ProfileBadgeIcon />
             <h1 className="truncate text-2xl font-black tracking-tight">{displayName}</h1>
             <button className="rounded-full bg-white/15 px-4 py-1.5 text-base font-bold">Edit</button>
           </div>
@@ -186,7 +218,15 @@ export default function ProfilePage() {
             </button>
           ))}
         </div>
-        {videos.length === 0 ? (
+        {videosLoading ? (
+          <div className="border-t border-white/10 py-12 text-center text-white/50">
+            <p className="text-lg font-semibold">Loading your posts...</p>
+          </div>
+        ) : videosError ? (
+          <div className="border-t border-white/10 py-12 text-center text-white/50">
+            <p className="mx-auto max-w-xs text-lg font-semibold">{videosError}</p>
+          </div>
+        ) : videos.length === 0 ? (
           <div className="border-t border-white/10 py-12 text-center text-white/50">
             <p className="text-lg font-semibold">No posts yet</p>
             <Link to="/upload" className="mt-3 inline-block rounded-full bg-[var(--brand-olive)] px-5 py-2 text-sm font-bold text-white">Create your first post</Link>
