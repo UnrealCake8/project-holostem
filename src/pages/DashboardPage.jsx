@@ -360,7 +360,7 @@ export default function DashboardPage() {
           : 'Follower activity will appear here.',
       },
     ]
-    const visibleNotifications = activityView === 'activity' || activityView === 'followers' ? notifications : []
+    const visibleNotifications = activityView === 'activity' || activityView === 'followers' || activityView === 'inbox' ? notifications : []
 
     return (
       <div className="theme-app-bg mx-auto max-w-2xl p-4 pt-20 lg:p-4">
