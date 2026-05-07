@@ -231,7 +231,7 @@ export default function AppShell() {
             ) : (
               <Link to="/dashboard" className="brand-wordmark text-2xl font-black tracking-tight">HoloStem</Link>
             )}
-            {location.pathname === '/dashboard' && (
+            {location.pathname === '/dashboard' ? (
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen((open) => !open)}
@@ -241,7 +241,15 @@ export default function AppShell() {
               >
                 ⌕
               </button>
-            )}
+            ) : user ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="absolute right-3 top-4 rounded-full border border-[rgba(227,232,191,0.25)] px-3 py-1 text-xs font-bold text-[var(--brand-cream)]"
+              >
+                Logout
+              </button>
+            ) : null}
             {mobileMenuOpen && (
               <form
                 id="mobile-search-panel"

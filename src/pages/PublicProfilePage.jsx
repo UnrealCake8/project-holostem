@@ -105,11 +105,11 @@ export default function PublicProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const [profileData, videosData, userId] = await Promise.all([
+      const [profileData, userId] = await Promise.all([
         getProfileByUsername(username),
-        fetchVideosByUsername(username),
         getUserIdByUsername(username),
       ])
+      const videosData = await fetchVideosByUsername(profileData?.username || username, userId)
       setProfile(profileData)
       setVideos(videosData)
       setProfileUserId(userId)

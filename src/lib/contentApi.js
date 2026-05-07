@@ -31,17 +31,27 @@ export async function fetchContentById(id) {
   return data
 }
 
-export async function fetchVideosByUsername(username) {
+export async function fetchVideosByUsername(username, userId = '') {
   if (!hasSupabaseConfig) {
     return fallbackContent
-      .filter((item) => item.username === username)
+      .filter((item) => item.username === username || (userId && item.user_id === userId))
       .sort((a, b) => Number(Boolean(b.is_pinned)) - Number(Boolean(a.is_pinned)))
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('contents')
     .select('*')
-    .eq('username', username)
+    .or('status.eq.published,status.is.null')
+
+  if (userId) {
+    const identityFilters = [`user_id.eq.${userId}`]
+    if (username) identityFilters.unshift(`username.eq.${username}`)
+    query = query.or(identityFilters.join(','))
+  } else {
+    query = query.eq('username', username)
+  }
+
+  const { data, error } = await query
     .order('is_pinned', { ascending: false, nullsFirst: false })
     .order('pinned_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })

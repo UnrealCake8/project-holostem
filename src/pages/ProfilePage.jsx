@@ -112,9 +112,9 @@ export default function ProfilePage() {
   }, [user.id])
 
   useEffect(() => {
-    if (!profile.username) return
-    fetchVideosByUsername(profile.username).then((items) => setVideos(sortPinnedVideos(items))).catch(() => setVideos([]))
-  }, [profile.username])
+    if (!profile.username && !user.id) return
+    fetchVideosByUsername(profile.username, user.id).then((items) => setVideos(sortPinnedVideos(items))).catch(() => setVideos([]))
+  }, [profile.username, user.id])
 
   async function handleSubmit(event) {
     event.preventDefault()

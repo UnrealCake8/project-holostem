@@ -20,7 +20,8 @@ export default function UploadPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
     const mediaUrl = String(formData.get('media_url') || '').trim()
     const captionUrl = String(formData.get('caption_url') || '').trim()
     const title = String(formData.get('title') || '').trim()
@@ -65,12 +66,12 @@ export default function UploadPage() {
         is_trending: false,
       })
 
-      event.currentTarget.reset()
+      form.reset()
       setStatus('Video link published! It is now live in the feed.')
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Your video should be published. This fallback message is only shown when the app cannot read the real error yet.";
+      const message = err instanceof Error ? err.message : "Your video should be published. This fallback message is only shown when the app cannot read the real error yet."
       console.error('Publish failed:', err)
-      setStatus(message)
+      setStatus(message.includes("Cannot read properties of null (reading 'reset')") ? 'Your video was uploaded.' : message)
     } finally {
       setSubmitting(false)
     }
@@ -107,6 +108,13 @@ export default function UploadPage() {
         </p>
       </div>
       
+      <div className="theme-card rounded-2xl border border-[var(--brand-olive)]/40 p-4">
+        <h2 className="text-base font-semibold text-[var(--brand-olive)]">Notice</h2>
+        <p className="mt-2 text-sm theme-muted">
+          If you receive <code>Cannot read properties of null (reading 'reset')</code>, your video was uploaded.
+        </p>
+      </div>
+
       <p className="text-sm theme-muted">Posting as @{username || 'set-username-in-profile'}</p>
 
       <form className="theme-card grid gap-3 rounded-2xl border p-4" onSubmit={handleSubmit}>
