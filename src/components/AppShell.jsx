@@ -14,12 +14,14 @@ const menuItems = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
+const navIconBaseUrl = 'https://unrealcake8.github.io/cdn-hls'
+
 const mobileNavItems = [
-  { to: '/dashboard', label: 'Home', icon: '⌂' },
-  { to: '/dashboard?tab=following', label: 'Following', icon: '♟' },
+  { to: '/dashboard', label: 'Home', iconFileName: 'home.png' },
+  { to: '/dashboard?tab=following', label: 'Following', iconFileName: 'following.png' },
   { to: '/upload', label: 'Create', icon: '+' },
-  { to: '/dashboard?tab=activity', label: 'Inbox', icon: '▭' },
-  { to: '/profile', label: 'Profile', icon: '♙' },
+  { to: '/dashboard?tab=activity', label: 'Inbox', iconFileName: 'inbox.png' },
+  { to: '/profile', label: 'Profile', iconFileName: 'profile.png' },
 ]
 
 function SuggestedAccounts() {
@@ -216,12 +218,9 @@ export default function AppShell() {
           <section className={`mobile-shell-top fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between px-4 text-[var(--brand-cream)] lg:hidden ${location.pathname === '/dashboard' && currentTab === 'for-you' ? 'bg-transparent' : 'bg-[var(--brand-black)]'}`}>
             {location.pathname === '/dashboard' && currentTab === 'activity' ? (
               <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Inbox</h1>
-            ) : location.pathname === '/dashboard' && currentTab === 'following' ? (
-              <h1 className="absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold">Following</h1>
             ) : location.pathname === '/dashboard' ? (
-              <div className="flex w-full items-center justify-between pr-12 text-base font-bold text-[rgba(227,232,191,0.65)] drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
+              <div className="flex w-full items-center justify-around pr-12 text-base font-bold text-[rgba(227,232,191,0.65)] drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)]">
                 <Link to="/dashboard?tab=explore" className={currentTab === 'explore' ? 'text-[var(--brand-cream)]' : ''}>Explore</Link>
-                <Link to="/dashboard?tab=following" className={currentTab === 'following' ? 'text-[var(--brand-cream)]' : ''}>Following</Link>
                 <Link to="/dashboard" className={`relative ${currentTab === 'for-you' ? 'text-[var(--brand-cream)]' : ''}`}>
                   For You
                   {currentTab === 'for-you' && <span className="absolute -bottom-3 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-[var(--brand-cream)]" />}
@@ -286,7 +285,12 @@ export default function AppShell() {
                   {item.label === 'Create' ? (
                     <span className="brand-plus relative mb-0.5 grid h-8 w-12 place-items-center rounded-xl text-3xl font-black leading-none">+</span>
                   ) : (
-                    <span className="text-3xl leading-none">{item.icon}</span>
+                    <img
+                      src={`${navIconBaseUrl}/${item.iconFileName}`}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-7 w-7 object-contain"
+                    />
                   )}
                   <span>{item.label === 'Create' ? '' : item.label}</span>
                 </NavLink>
