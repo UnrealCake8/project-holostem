@@ -183,13 +183,31 @@ export default function DashboardPage() {
     let cancelled = false
 
     async function hydrateActivity() {
-      const [followNotifications, followingData] = await Promise.all([
-        user?.id ? fetchFollowNotifications(user.id) : Promise.resolve([]),
-        user?.id ? fetchFollowingForUser(user.id) : Promise.resolve([]),
+      setFeed([])
+      if (!user?.id) {
+        setNotifications([])
+        setFollowingProfiles([])
+        return
+      }
+
+      const [notificationsResult, followingResult] = await Promise.allSettled([
+        fetchFollowNotifications(user.id),
+        fetchFollowingForUser(user.id),
       ])
 
       if (cancelled) return
-      setFeed([])
+
+      const followNotifications = notificationsResult.status === 'fulfilled' ? notificationsResult.value : []
+      const followingData = followingResult.status === 'fulfilled' ? followingResult.value : []
+
+      if (notificationsResult.status === 'rejected' || followingResult.status === 'rejected') {
+        console.error('Activity load failed:', {
+          notifications: notificationsResult.status === 'rejected' ? notificationsResult.reason : null,
+          following: followingResult.status === 'rejected' ? followingResult.reason : null,
+        })
+        setLoadError('Some activity could not load. Refresh or try again in a moment.')
+      }
+
       setNotifications(followNotifications)
       setFollowingProfiles(followingData.map((entry) => ({
         id: entry.following_id,
@@ -427,6 +445,7 @@ export default function DashboardPage() {
 
         <section className="-mx-4 -mt-20 min-h-screen brand-surface-mobile pb-28 pt-20 lg:hidden">
           {loadError && <p className="mx-4 mb-4 rounded-xl brand-error p-3 text-sm">{loadError}</p>}
+          {loading && <p className="mx-4 mb-4 rounded-xl bg-white/5 p-3 text-sm text-white/60">Loading activity…</p>}
           <div className="flex gap-4 overflow-x-auto px-4 pb-5 pt-3" style={{ scrollbarWidth: 'none' }}>
             {storyProfiles.length === 0 ? (
               <div className="py-3 text-sm text-white/45">Follow creators to see their updates here.</div>
@@ -465,6 +484,10 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+
+          {!loading && visibleNotifications.length === 0 && activityView !== 'inbox' && (
+            <p className="mx-4 mt-5 rounded-2xl bg-white/5 p-4 text-sm text-white/55">No activity here yet.</p>
+          )}
 
           {visibleNotifications.length > 0 && (
             <div className="mx-4 mt-5 space-y-3 rounded-2xl bg-white/5 p-3">

@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { hasSupabaseConfig, supabase } from '../lib/supabase'
 import { fetchFollowStatus, followUser, unfollowUser } from '../lib/contentApi'
 
 const menuItems = [
@@ -31,6 +31,7 @@ function SuggestedAccounts() {
 
   useEffect(() => {
     async function load() {
+      if (!hasSupabaseConfig) return
       // Fetch up to 5 real profiles — exclude the current logged-in user
       let query = supabase
         .from('profiles')

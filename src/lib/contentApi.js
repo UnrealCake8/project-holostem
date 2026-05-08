@@ -541,13 +541,27 @@ export async function addUserStrike({ user_id, strike_count = 1, notes = '' }) {
   if (error) throw error
 }
 
-export async function fetchProfilesByIds(userIds = []) {
+export async function fetchProfilesByIds(userIds = [], { includePrivate = false } = {}) {
   const ids = [...new Set((userIds || []).filter(Boolean))]
   if (!hasSupabaseConfig || !ids.length) return {}
+
+  const publicColumns = 'id, username, display_name, avatar_url'
+  const columns = includePrivate ? `${publicColumns}, email, role` : publicColumns
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, email, role')
+    .select(columns)
     .in('id', ids)
+
+  if (error && includePrivate) {
+    console.warn('Private profile fields are unavailable; falling back to public profile fields.', error)
+    const fallback = await supabase
+      .from('profiles')
+      .select(publicColumns)
+      .in('id', ids)
+    if (fallback.error) throw fallback.error
+    return Object.fromEntries((fallback.data || []).map((row) => [row.id, row]))
+  }
+
   if (error) throw error
   return Object.fromEntries((data || []).map((row) => [row.id, row]))
 }
