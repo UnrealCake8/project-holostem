@@ -149,7 +149,7 @@ export default function ProfilePage() {
     setVideosLoading(true)
     setVideosError('')
 
-    fetchVideosByUsername(profile.username, user.id)
+    fetchVideosByUsername(profile.username, user.id, { includeUnpublished: true })
       .then((items) => {
         if (!cancelled) setVideos(sortPinnedVideos(items))
       })

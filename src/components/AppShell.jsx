@@ -9,7 +9,7 @@ const menuItems = [
   { to: '/dashboard?tab=explore', label: 'Explore', icon: '🧭' },
   { to: '/dashboard?tab=following', label: 'Following', icon: '🫧' },
   { to: '/dashboard?tab=activity', label: 'Activity', icon: '🔔' },
-  { to: '/upload', label: 'Add video link', icon: '⬆️' },
+  { to: '/upload', label: 'Upload video', icon: '⬆️' },
   { to: '/profile', label: 'Profile', icon: '👤' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
@@ -162,13 +162,13 @@ export default function AppShell() {
             HoloStem
           </Link>
           <form className="mt-4" onSubmit={handleSearchSubmit}>
-            <label className="sr-only" htmlFor="app-search">Search videos</label>
+            <label className="sr-only" htmlFor="app-search">Search videos and profiles</label>
             <input
               id="app-search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               className="theme-input w-full rounded-full border px-4 py-2 text-sm"
-              placeholder="🔍 Search videos"
+              placeholder="🔍 Search videos and profiles"
               type="search"
             />
           </form>
@@ -256,13 +256,13 @@ export default function AppShell() {
                 onSubmit={(event) => { handleSearchSubmit(event); setMobileMenuOpen(false) }}
                 className="absolute left-3 right-3 top-16 rounded-2xl bg-[rgba(18,24,13,0.97)] p-3 shadow-2xl"
               >
-                <label className="sr-only" htmlFor="app-search-mobile">Search videos</label>
+                <label className="sr-only" htmlFor="app-search-mobile">Search videos and profiles</label>
                 <input
                   id="app-search-mobile"
                   value={searchText}
                   onChange={(event) => setSearchText(event.target.value)}
                   className="w-full rounded-full border border-[rgba(227,232,191,0.16)] bg-[rgba(227,232,191,0.10)] px-4 py-2 text-sm text-[var(--brand-cream)] placeholder:text-[rgba(227,232,191,0.5)]"
-                  placeholder="Search videos"
+                  placeholder="Search videos and profiles"
                   type="search"
                 />
               </form>

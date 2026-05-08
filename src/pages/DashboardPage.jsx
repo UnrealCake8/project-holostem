@@ -6,6 +6,7 @@ import {
   fetchFollowingIds,
   fetchFollowNotifications,
   fetchProfileAvatarsByUserIds,
+  fetchProfilesBySearch,
 } from '../lib/contentApi'
 import { useAuth } from '../context/useAuth'
 import FeedItem from '../components/FeedItem'
@@ -87,6 +88,33 @@ function MindfulModal({
   )
 }
 
+function SearchProfileResults({ profiles, searchQuery }) {
+  if (!searchQuery || profiles.length === 0) return null
+
+  return (
+    <div className="fixed left-4 right-4 top-20 z-30 mx-auto max-w-2xl rounded-2xl bg-black/80 p-3 text-white shadow-2xl backdrop-blur lg:left-[300px] lg:right-[140px]">
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-white/45">Profiles matching “{searchQuery}”</p>
+      <div className="flex gap-3 overflow-x-auto">
+        {profiles.map((profile) => (
+          <Link key={profile.id || profile.username} to={`/u/${profile.username}`} className="flex min-w-44 items-center gap-3 rounded-xl bg-white/10 p-2 hover:bg-white/15">
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt={`${profile.username} avatar`} className="h-11 w-11 rounded-full object-cover" />
+            ) : (
+              <span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--brand-olive)] text-sm font-black">
+                {(profile.display_name || profile.username || '?')[0].toUpperCase()}
+              </span>
+            )}
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-bold">{profile.display_name || profile.username}</span>
+              <span className="block truncate text-xs text-white/55">@{profile.username}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function UsageOnboarding({ onSave }) {
   const [dailyLimitMinutes, setDailyLimitMinutes] = useState(60)
   const [videosPerSession, setVideosPerSession] = useState(10)
@@ -132,6 +160,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [activeIndex, setActiveIndex] = useState(0)
   const [notifications, setNotifications] = useState([])
+  const [profileResults, setProfileResults] = useState([])
   const [followingProfiles, setFollowingProfiles] = useState([])
   const [loadError, setLoadError] = useState('')
   const [usageSettings, setUsageSettings] = useState(readUsageSettings)
@@ -169,7 +198,11 @@ export default function DashboardPage() {
     }
 
     async function hydrateFeed() {
-      const browseData = await fetchContent({ search: searchQuery, category: 'all' })
+      const [browseData, profilesData] = await Promise.all([
+        fetchContent({ search: searchQuery, category: 'all' }),
+        searchQuery.trim() ? fetchProfilesBySearch(searchQuery) : Promise.resolve([]),
+      ])
+      if (!cancelled) setProfileResults(profilesData)
 
       if (tab === 'following') {
         const followingIds = user?.id ? await fetchFollowingIds(user.id) : []
@@ -195,6 +228,7 @@ export default function DashboardPage() {
       setLoadError('')
       try {
         if (tab === 'activity') {
+          setProfileResults([])
           await hydrateActivity()
         } else {
           await hydrateFeed()
@@ -464,6 +498,7 @@ export default function DashboardPage() {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-[var(--brand-black)] text-[var(--brand-cream)] gap-4">
         <div className="text-4xl">📭</div>
+        <SearchProfileResults profiles={profileResults} searchQuery={searchQuery} />
         {loadError && <p className="max-w-xs rounded-xl brand-error p-3 text-center text-sm">{loadError}</p>}
         <p className="max-w-xs text-center text-xl font-semibold">
           {tab === 'following'
@@ -487,6 +522,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <SearchProfileResults profiles={profileResults} searchQuery={searchQuery} />
       {!usageSettings.onboarded && <div className="hidden lg:block"><UsageOnboarding onSave={handleSaveOnboarding} /></div>}
       {modalType && (
         <div className="hidden lg:block">
