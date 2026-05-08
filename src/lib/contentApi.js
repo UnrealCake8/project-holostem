@@ -13,7 +13,10 @@ export async function fetchContent({ search = '', category = 'all' } = {}) {
     .order('created_at', { ascending: false })
 
   if (category !== 'all') query = query.eq('type', category)
-  if (search.trim()) query = query.ilike('title', `%${search.trim()}%`)
+  if (search.trim()) {
+    const term = search.trim()
+    query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%,username.ilike.%${term}%`)
+  }
 
   const { data, error } = await query
   if (error) throw error
@@ -31,7 +34,7 @@ export async function fetchContentById(id) {
   return data
 }
 
-export async function fetchVideosByUsername(username, userId = '') {
+export async function fetchVideosByUsername(username, userId = '', { includeUnpublished = false } = {}) {
   if (!hasSupabaseConfig) {
     return fallbackContent
       .filter((item) => item.username === username || (userId && item.user_id === userId))
@@ -41,13 +44,15 @@ export async function fetchVideosByUsername(username, userId = '') {
   let query = supabase.from('contents').select('*')
 
   if (userId) {
-    query = query
-      .eq('user_id', userId)
-      .or('status.is.null,status.not.in.(removed,rejected)')
+    query = query.eq('user_id', userId)
   } else {
-    query = query
-      .eq('username', username)
-      .or('status.eq.published,status.is.null')
+    query = query.eq('username', username)
+  }
+
+  if (includeUnpublished) {
+    query = query.or('status.is.null,status.neq.removed')
+  } else {
+    query = query.or('status.eq.published,status.is.null')
   }
 
   const { data, error } = await query
@@ -296,6 +301,40 @@ export async function getUserIdByUsername(username) {
     .maybeSingle()
   if (error) throw error
   return data?.id ?? null
+}
+
+export async function fetchProfilesBySearch(search = '', { limit = 8 } = {}) {
+  const term = search.trim()
+  if (!term) return []
+
+  if (!hasSupabaseConfig) {
+    const seen = new Set()
+    return fallbackContent
+      .filter((item) => item.username?.toLowerCase().includes(term.toLowerCase()))
+      .filter((item) => {
+        if (seen.has(item.username)) return false
+        seen.add(item.username)
+        return true
+      })
+      .slice(0, limit)
+      .map((item) => ({
+        id: item.user_id || item.username,
+        username: item.username,
+        display_name: item.username,
+        avatar_url: '',
+        bio: 'Demo creator profile',
+      }))
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, full_name, avatar_url, bio')
+    .not('username', 'is', null)
+    .or(`username.ilike.%${term}%,display_name.ilike.%${term}%,full_name.ilike.%${term}%`)
+    .limit(limit)
+
+  if (error) throw error
+  return data ?? []
 }
 
 export async function fetchSuggestedProfiles({ excludeUserId = '', limit = 8 } = {}) {
