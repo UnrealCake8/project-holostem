@@ -18,6 +18,7 @@
     "@supabase/supabase-js": "^2.103.3",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
     "effect": "^3.21.0",
     "express": "^5.2.1",
     "helmet": "^8.1.0",

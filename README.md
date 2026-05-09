@@ -76,7 +76,26 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
 
 ---
 
-## 3) Database schema
+## 3) Bunny.net uploads on Vercel
+
+Bunny.net uploads are handled by the `/api/bunny/upload` serverless function, so the Bunny variables must exist in the API runtime environment.
+
+For local development, copy `.env.example` to `.env` and fill in the Bunny values there. Editing `.env.example` alone is not enough for a deployed Vercel app.
+
+In **Vercel → Project Settings → Environment Variables**, add these variables for the environments you use, then redeploy the project:
+
+```env
+BUNNY_STORAGE_ZONE_NAME=your-storage-zone
+BUNNY_STORAGE_ACCESS_KEY=your-storage-api-key
+BUNNY_STORAGE_REGION=ny # optional; leave blank/remove for Bunny's default storage hostname
+BUNNY_PULL_ZONE_URL=https://your-pull-zone.b-cdn.net
+```
+
+If these variables are missing from Vercel or the deployment has not been redeployed since adding them, the app will show the direct MP4 fallback message.
+
+---
+
+## 4) Database schema
 
 `supabase/001_holostem_schema.sql` creates/updates:
 
@@ -93,7 +112,7 @@ It also includes starter content rows for quick testing. `supabase/002_storage_p
 
 ---
 
-## 4) Features implemented
+## 5) Features implemented
 
 ### Interactive Content System
 - Grid browsing UI with search and type filter.
@@ -102,7 +121,7 @@ It also includes starter content rows for quick testing. `supabase/002_storage_p
   - `lesson`
   - `mini`
 - Clicking opens `/content/:id` viewer.
-- Authenticated users can upload videos from `/upload` directly into Supabase Storage and publish to the feed.
+- Authenticated users can upload videos from `/upload` to Bunny.net through the Vercel API function, or publish a direct MP4 link fallback to the feed.
 
 ### Personalized Feed
 - Recommended content
@@ -122,11 +141,11 @@ It also includes starter content rows for quick testing. `supabase/002_storage_p
 
 ---
 
-## 5) Deploy to Vercel
+## 6) Deploy to Vercel
 
 1. Push repo to GitHub.
 2. Import into Vercel.
-3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel project environment variables.
-4. Deploy.
+3. Add the Supabase, auth redirect, and Bunny upload variables in Vercel project environment variables.
+4. Deploy or redeploy after every environment variable change.
 
-No custom server is required for this frontend-Supabase architecture.
+The Express API runs as a Vercel serverless function through `api/index.js`, so server-only variables such as `BUNNY_STORAGE_ACCESS_KEY` must be configured in Vercel and do not need a `VITE_` prefix.

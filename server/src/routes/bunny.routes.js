@@ -8,13 +8,22 @@ const upload = multer({
   limits: { fileSize: 500 * 1024 * 1024 },
 })
 
-function getBunnyConfig() {
-  const storageZone = process.env.BUNNY_STORAGE_ZONE_NAME
-  const accessKey = process.env.BUNNY_STORAGE_ACCESS_KEY
-  const pullZoneUrl = process.env.BUNNY_PULL_ZONE_URL
-  const region = process.env.BUNNY_STORAGE_REGION || ''
+function cleanEnvValue(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
 
-  if (!storageZone || !accessKey || !pullZoneUrl) {
+function isPlaceholderValue(value) {
+  return /^your[-_]/i.test(value) || /^https:\/\/your[-.]/i.test(value)
+}
+
+function getBunnyConfig() {
+  const storageZone = cleanEnvValue(process.env.BUNNY_STORAGE_ZONE_NAME)
+  const accessKey = cleanEnvValue(process.env.BUNNY_STORAGE_ACCESS_KEY)
+  const pullZoneUrl = cleanEnvValue(process.env.BUNNY_PULL_ZONE_URL)
+  const region = cleanEnvValue(process.env.BUNNY_STORAGE_REGION)
+
+  const requiredValues = [storageZone, accessKey, pullZoneUrl]
+  if (requiredValues.some((value) => !value || isPlaceholderValue(value))) {
     return null
   }
 
@@ -46,7 +55,7 @@ router.post('/upload', upload.single('video'), async (req, res) => {
   const config = getBunnyConfig()
   if (!config) {
     return res.status(503).json({
-      message: 'Bunny.net uploads are not configured yet. Use a direct MP4 link instead.',
+      message: 'Bunny.net uploads are not configured yet. Add Bunny env vars in Vercel Project Settings, redeploy, or use a direct MP4 link instead.',
     })
   }
 
